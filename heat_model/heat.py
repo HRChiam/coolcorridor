@@ -27,6 +27,7 @@ DATA = ROOT / "data"
 A, B, C = 8.0, 4.0, 0.5
 COMFORT_C = 32.0  # comfort line, shared with Person 2's heat exposure
 HOURS = range(7, 20)
+TZ = "Asia/Kuala_Lumpur"
 
 
 def heat_score(air_temp_c, shade, sw_wm2, albedo, wind_ms):
@@ -46,11 +47,17 @@ def _links():
 
 
 def heat_at(hour):
-    """Links with `shade` and `heat` (°C) at that hour of the design day."""
+    """Links with `shade` and `heat` (°C) at that hour of the design day.
+
+    `heat` is sensor-corrected once sensor_correction.py has run; `heat_model` is
+    the uncorrected score.
+    """
     links = _links()
     out = links[["link_id", "u", "v", "name", "length_m", "covered", "canopy", "surface", "albedo", "geometry"]].copy()
     out["shade"] = links[f"shade_h{hour:02d}"]
-    out["heat"] = links[f"heat_h{hour:02d}"]
+    out["heat_model"] = links[f"heat_h{hour:02d}"]
+    corrected = f"heat_corr_h{hour:02d}"
+    out["heat"] = links[corrected] if corrected in links else out["heat_model"]
     return out
 
 

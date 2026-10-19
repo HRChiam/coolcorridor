@@ -6,10 +6,13 @@ elevation and azimuth from pvlib. Writes data/weather.csv, one row per day+hour:
   day (design | forecast), date, hour, air_temp_c, rh_pct, wind_ms,
   sw_wm2 (sunlight on flat ground), sun_elev_deg, sun_azim_deg (0 = north, clockwise)
 
-Run:  .venv/Scripts/python heat_model/weather.py [--date YYYY-MM-DD]
+Run:  .venv/Scripts/python heat_model/weather.py [--date YYYY-MM-DD | --repick]
+Re-runs keep the design day already in weather.csv (only the forecast refreshes),
+so results don't shift; --repick chooses a new one.
 """
 
 import argparse
+import time
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -30,9 +33,16 @@ COMMON = {"latitude": LAT, "longitude": LON, "timezone": TZ, "wind_speed_unit": 
 
 
 def get(url, **params):
-    r = requests.get(url, params={**COMMON, **params}, timeout=60)
-    r.raise_for_status()
-    return r.json()
+    for attempt in range(3):
+        try:
+            r = requests.get(url, params={**COMMON, **params}, timeout=60)
+            r.raise_for_status()
+            return r.json()
+        except requests.RequestException as e:
+            if attempt == 2:
+                raise
+            print(f"  Open-Meteo error ({e.__class__.__name__}), retrying in {10 * (attempt + 1)}s")
+            time.sleep(10 * (attempt + 1))
 
 
 def pick_design_day():
@@ -48,6 +58,14 @@ def pick_design_day():
           f"sun {best.shortwave_radiation_sum} MJ/m², rain {best.precipitation_sum} mm "
           f"(sunniest quarter of {len(days)} days, hottest of those)")
     return best.time
+
+
+def saved_design_date():
+    path = DATA / "weather.csv"
+    if not path.exists():
+        return None
+    dates = pd.read_csv(path).query("day == 'design'").date
+    return dates.iloc[0] if len(dates) else None
 
 
 def hourly(url, label, **params):
@@ -71,13 +89,21 @@ def hourly(url, label, **params):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", help="use this design day instead of picking one")
+    parser.add_argument("--repick", action="store_true", help="pick a new design day instead of keeping the saved one")
     args = parser.parse_args()
 
-    design_date = args.date or pick_design_day()
+    design_date = args.date or (None if args.repick else saved_design_date()) or pick_design_day()
     design = hourly("https://archive-api.open-meteo.com/v1/archive", "design",
                     start_date=design_date, end_date=design_date)
     today = date.today().isoformat()
-    forecast = hourly("https://api.open-meteo.com/v1/forecast", "forecast", start_date=today, end_date=today)
+    try:
+        forecast = hourly("https://api.open-meteo.com/v1/forecast", "forecast", start_date=today, end_date=today)
+    except requests.RequestException as e:
+        # The heat model only uses the design day; keep the last forecast rather than fail
+        old = DATA / "weather.csv"
+        forecast = pd.read_csv(old).query("day == 'forecast'") if old.exists() else pd.DataFrame()
+        today = forecast.date.iloc[0] if len(forecast) else "none"
+        print(f"Forecast unavailable ({e.__class__.__name__}); keeping the previous forecast ({today})")
 
     weather = pd.concat([design, forecast], ignore_index=True)
     weather.to_csv(DATA / "weather.csv", index=False)
