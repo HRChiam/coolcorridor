@@ -4,6 +4,6 @@ S02,L0027,exposed asphalt,Jalan Putra Setia 6/1,asphalt,0.0,False,asphalt,1.5,2.
 S03,L0375,tree-lined,Persiaran Putra Perdana,paver,0.75,False,tree-lined,-1.0,2.999689,101.572699,Persiaran Putra Perdana; hand-tagged canopy 0.75
 S04,L0298,tree-lined,Jalan Putra Mahkota 7/6,grass,0.75,False,tree-lined,-1.0,2.995605,101.572417,"Jalan Putra Mahkota 7/6, Seksyen 7; hand-tagged canopy 0.75"
 S05,L1242,covered walkway,,concrete,0.0,True,covered,-0.5,2.995417,101.575007,"Covered footway at the station (OSM covered=yes), 79 m"
-S06,L1274,LRT entrance,,concrete,0.0,False,concrete,1.0,2.995758,101.575445,Nearest uncovered link to the station (35 m); confirm entrance on Street View
+S06,L1274,LRT entrance,,concrete,0.0,False,concrete,1.0,2.995758,101.575445,"At the station, Putra Heights (SP31/KJ37); confirmed on Google Maps"
 S07,L1380,park,,paver,0.25,False,park,-1.5,2.994,101.572546,Footway in Taman Komuniti Putra Heights; hand-tagged
-S08,L0924,shops,,concrete,0.0,False,concrete,1.0,2.996139,101.573388,"Service lane behind the Putra Mahkota shophouses, 7 shops within 40 m; surface from road type, check Street View"
+S08,L0924,shops,,grass,0.0,False,grass,0.5,2.996139,101.573388,"Service lane by the Putra Mahkota shophouses, 7 shops within 40 m; people walk on the grass verge (checked on Street View). Grass offset +0.5 is a proposal: not in the simulator spec yet"

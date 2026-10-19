@@ -59,3 +59,4 @@ rank,link_id,name,highway,length_m,lat,lon,streetview,osm_covered,osm_surface,co
 58,L0370,Persiaran Putra Perdana,secondary,11.1,2.999008,101.572868,"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=2.999008,101.572868",,,no,paver,0,
 59,L0787,Persiaran Putra Perdana,secondary,69.8,2.995475,101.576363,"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=2.995475,101.576363",,,no,asphalt,0,
 60,L0962,Persiaran Putra Mahkota,tertiary,115.9,2.995688,101.570311,"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=2.995688,101.570311",,,no,paver,0.5,
+61,L0924,,service,66.6,2.996139,101.573388,"https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=2.996139,101.573388",,,no,grass,,S08 sensor site; people walk on the grass verge between the road and the shops

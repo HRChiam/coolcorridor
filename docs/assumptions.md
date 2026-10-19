@@ -20,7 +20,7 @@ Every assumption and simulated input in CoolCorridor, as the organisers require.
 | Serasi occupancy | 0 households counted; the towers are kept because they already stand and cast shadows | Completion is Feb 2027, so the model represents Putra Heights today |
 | Households in houses | 1 per house footprint; homes grouped into 200 m cells (855 households, all households in the model) | Our estimate from OSM footprints |
 | Surface reflectivity (albedo) | Asphalt 0.10, concrete 0.30, paver 0.25, grass 0.25 | Asphalt and concrete: aged-pavement values from US EPA, *Reducing Urban Heat Islands: Compendium of Strategies – Cool Pavements*, p. 5, Fig. 4 (asphalt lightens from ~0.05 new; concrete darkens from ~0.40 new). Paver and grass: our estimate within the same range |
-| Hand-tagged links | 60 links (6.0 km, 55% of household walking distance): covered, surface, canopy | Street View by hand (real); canopy estimated by eye in steps of 0.25 |
+| Hand-tagged links | The 60 most-walked links (6.0 km, 55% of household walking distance), plus the S08 sensor site: covered, surface, canopy | Street View by hand (real); canopy estimated by eye in steps of 0.25 |
 | Untagged links | Canopy and surface borrowed from tagged links on the same street (199 links), else the same road type with at least 4 tagged links (1,076); the remaining 156 keep canopy 0 | Our estimate from the hand tags |
 | Satellite canopy | Not used: ESA WorldCover (10 m) and Meta canopy height (1 m) did not match the hand tags (correlation ≤ 0.07) | Tested |
 | Default surface | Footpaths concrete, roads asphalt, where neither tags nor borrowing apply | Our estimate |
@@ -45,6 +45,6 @@ All sensor readings are **synthetic** and labelled "Simulated data" wherever sho
 | Assumption | Value | Basis |
 |---|---|---|
 | Sensor sites | 8 links: 2 exposed asphalt, 2 tree-lined, 1 covered walkway, 1 LRT entrance, 1 park, 1 shops (`data/sensor_links.csv`) | Chosen for contrast |
-| Air temperature offsets by link type | Asphalt +1.5, concrete +1.0, paver +0.8, covered −0.5, tree-lined −1.0, park −1.5 °C | Our estimate |
+| Air temperature offsets by link type | Asphalt +1.5, concrete +1.0, paver +0.8, grass verge +0.5 (proposed for S08), covered −0.5, tree-lined −1.0, park −1.5 °C | Our estimate |
 | Noise | Air ±0.3°C, humidity ±2%, surface ±1°C | Our estimate |
 | Faults | One sensor silent for 30 min, one spikes | Built in to test the app's checks |
