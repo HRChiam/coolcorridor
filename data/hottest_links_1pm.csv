@@ -1,11 +1,11 @@
 rank,link_id,name,highway,length_m,surface,canopy,covered,shade_h13,heat_h13,minutes_above_comfort
-1,L1488,,service,79.5,asphalt,0.0,False,0.0,42.78,420
-2,L0373,Jalan Putra Indera 5,unclassified,40.5,asphalt,0.0,False,0.0,42.78,600
-3,L1459,,service,30.7,asphalt,0.0,False,0.0,42.78,600
-4,L0374,,secondary_link,17.4,asphalt,0.0,False,0.0,42.78,600
-5,L1448,Jalan Putra Indera 5,unclassified,148.4,asphalt,0.0,False,0.0,42.78,600
-6,L0027,Jalan Putra Setia 6/1,residential,30.6,asphalt,0.0,False,0.0,42.78,600
-7,L0023,Persiaran Putra Perdana,secondary,15.1,asphalt,0.0,False,0.0,42.78,600
-8,L0381,Jalan Putra Indera 5,unclassified,8.1,asphalt,0.0,False,0.0,42.78,600
-9,L0787,Persiaran Putra Perdana,secondary,69.8,asphalt,0.0,False,0.0,42.78,600
-10,L1445,Jalan Putra Indera 5,unclassified,15.0,asphalt,0.0,False,0.0,42.78,540
+1,L0027,Jalan Putra Setia 6/1,residential,30.6,asphalt,0.0,False,0.0,42.78,600
+2,L0787,Persiaran Putra Perdana,secondary,69.8,asphalt,0.0,False,0.0,42.78,600
+3,L1448,Jalan Putra Indera 5,unclassified,148.4,asphalt,0.0,False,0.0,42.78,600
+4,L0023,Persiaran Putra Perdana,secondary,15.1,asphalt,0.0,False,0.0,42.78,600
+5,L1456,Jalan Putra Indera 5,unclassified,92.6,asphalt,0.0,False,0.0,42.78,600
+6,L0374,,secondary_link,17.4,asphalt,0.0,False,0.0,42.78,600
+7,L1461,Jalan Putra Indera 5,unclassified,55.4,asphalt,0.0,False,0.0,42.78,600
+8,L1458,Jalan Putra Indera 5,unclassified,15.7,asphalt,0.0,False,0.0,42.78,600
+9,L1445,Jalan Putra Indera 5,unclassified,15.0,asphalt,0.0,False,0.0,42.78,540
+10,L0381,Jalan Putra Indera 5,unclassified,8.1,asphalt,0.0,False,0.0,42.78,600

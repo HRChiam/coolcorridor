@@ -17,10 +17,10 @@ Every assumption and simulated input in CoolCorridor, as the organisers require.
 | Shadow method | Building footprints extruded as flat-roofed blocks on flat ground; links sampled every 5 m | Plan method; terrain ignored |
 | Building heights where OSM has none | 3.5 m per floor; terrace 2 floors, shophouse 3, semi-detached and detached 2, apartments 10, others 2 | Our estimate; 94 of 4,730 buildings have OSM heights |
 | Serasi Residences | Blocks 1–3: 33, 33 and 28 storeys; 507, 419 and 502 units (1,428) | The Edge (theedgemalaysia.com/node/727438) |
-| Serasi occupancy | Its 1,428 households are counted although completion is Feb 2027 | Design choice: the model represents the year Serasi opens |
-| Households in houses | 1 per house footprint; homes grouped into 200 m cells (855 households) | Our estimate from OSM footprints |
+| Serasi occupancy | 0 households counted; the towers are kept because they already stand and cast shadows | Completion is Feb 2027, so the model represents Putra Heights today |
+| Households in houses | 1 per house footprint; homes grouped into 200 m cells (855 households, all households in the model) | Our estimate from OSM footprints |
 | Surface reflectivity (albedo) | Asphalt 0.10, concrete 0.30, paver 0.25, grass 0.25 | Asphalt and concrete: aged-pavement values from US EPA, *Reducing Urban Heat Islands: Compendium of Strategies – Cool Pavements*, p. 5, Fig. 4 (asphalt lightens from ~0.05 new; concrete darkens from ~0.40 new). Paver and grass: our estimate within the same range |
-| Hand-tagged links | 60 links (6.0 km, 69% of household walking distance): covered, surface, canopy | Street View by hand (real); canopy estimated by eye in steps of 0.25 |
+| Hand-tagged links | 60 links (6.0 km, 55% of household walking distance): covered, surface, canopy | Street View by hand (real); canopy estimated by eye in steps of 0.25 |
 | Untagged links | Canopy and surface borrowed from tagged links on the same street (199 links), else the same road type with at least 4 tagged links (1,076); the remaining 156 keep canopy 0 | Our estimate from the hand tags |
 | Satellite canopy | Not used: ESA WorldCover (10 m) and Meta canopy height (1 m) did not match the hand tags (correlation ≤ 0.07) | Tested |
 | Default surface | Footpaths concrete, roads asphalt, where neither tags nor borrowing apply | Our estimate |
