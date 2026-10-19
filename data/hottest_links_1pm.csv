@@ -8,4 +8,4 @@ rank,link_id,name,highway,length_m,surface,canopy,covered,shade_h13,heat_h13,min
 7,L0023,Persiaran Putra Perdana,secondary,15.1,asphalt,0.0,False,0.0,42.78,600
 8,L0381,Jalan Putra Indera 5,unclassified,8.1,asphalt,0.0,False,0.0,42.78,600
 9,L0787,Persiaran Putra Perdana,secondary,69.8,asphalt,0.0,False,0.0,42.78,600
-10,L0404,Jalan Putra Bahagia 8/4,residential,69.1,asphalt,0.0,False,0.0,42.78,600
+10,L1445,Jalan Putra Indera 5,unclassified,15.0,asphalt,0.0,False,0.0,42.78,540
