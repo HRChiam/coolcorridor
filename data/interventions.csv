@@ -1,0 +1,5 @@
+fix,cost_rm_per_m,shade_gain,albedo_gain,note
+shade_trees,160,0.35,0,"ASSUMPTION - landscaping plus upkeep; verify local quotations and planting feasibility"
+shade_sail,350,0.75,0,"ASSUMPTION - structure/anchors and upkeep; confirm local contractor prices"
+covered_walkway,1000,1.00,0,"ASSUMPTION - full continuous shade; obtain design and accessibility quotations"
+cool_paving,120,0,0.30,"ASSUMPTION - albedo uplift depends on existing paving; obtain material quotes"
