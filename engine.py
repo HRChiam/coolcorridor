@@ -124,7 +124,8 @@ def _shade(row: pd.Series, hour: int) -> float:
 
 
 def _heat(row: pd.Series, hour: int) -> float:
-    for key in (f"heat_h{hour:02d}", f"heat_h{hour}"):
+    # Sensor-corrected heat (Person 1's heat_corr_hNN) when it exists, else the model's
+    for key in (f"heat_corr_h{hour:02d}", f"heat_h{hour:02d}", f"heat_h{hour}"):
         if key in row and pd.notna(row[key]):
             return float(row[key])
     raise ValueError(f"Missing Person 1's heat_h{hour:02d} in links.geojson; run heat model before routing")
@@ -133,7 +134,10 @@ def _heat(row: pd.Series, hour: int) -> float:
 def heat_at(hour: int) -> gpd.GeoDataFrame:
     """Return Person 1's computed heat map at one hour, with heat_score/shade.
 
-    Reads (does NOT recalculate or modify) the sensor-corrected hourly columns.
+    Reads (does NOT recalculate or modify) the hourly columns. heat_score is the
+    sensor-corrected heat once Person 1 has run the correction (heat_corr_hNN),
+    else the uncorrected model (heat_hNN), which is always kept as heat_model.
+    Every other links.geojson column (e.g. unsafe, confidence) is passed through.
     Person 3 can call this as soon as Person 1 supplies the exported GeoJSON.
     """
     hour = _validate_hour(hour)
@@ -141,7 +145,9 @@ def heat_at(hour: int) -> gpd.GeoDataFrame:
     key = _hour_col(links, "heat", hour)
     if key is None:
         raise ValueError(f"Person 1 must first produce heat_h{hour:02d} in data/links.geojson")
-    links["heat_score"] = pd.to_numeric(links[key], errors="raise")
+    links["heat_model"] = pd.to_numeric(links[key], errors="raise")
+    corrected = _hour_col(links, "heat_corr", hour)
+    links["heat_score"] = pd.to_numeric(links[corrected], errors="raise") if corrected else links["heat_model"]
     links["shade"] = links.apply(lambda r: _shade(r, hour), axis=1)
     links["hour"] = hour
     return links
@@ -463,7 +469,9 @@ def _calculate_fix(row: pd.Series, fix: pd.Series, radiation: dict[int, float]) 
     original_shade, new_shade = {}, {}
     for hour in HOURS:
         s0 = _shade(row, hour)
-        s1 = min(1.0, s0 + float(fix["shade_gain"]))
+        # The fix blocks a share shade_gain of the sun still reaching the link, the
+        # same way Person 1's shade model adds trees on top of building shadow
+        s1 = s0 + (1.0 - s0) * float(fix["shade_gain"])
         # Covered walkway should provide full shade, even if shade_gain < 1.
         if str(fix["fix"]) == "covered_walkway":
             s1 = 1.0

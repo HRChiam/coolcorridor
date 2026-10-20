@@ -2,6 +2,10 @@
 
 For Person 2 (routing and planner). This is everything from the heat model that `route()`, `priorities()` and `apply_fix()` need, and how to call it. Every snippet here has been run against the current data.
 
+> **Update, 20 Oct.** This guide was written before `engine.py` existed. Agreed since then:
+> - **`engine.heat_at` (yours) is the one `heat_at` the app uses.** It now takes the sensor-corrected `heat_corr_hNN` columns when they exist, and so do routing, fixes and area totals (through `_heat`). It also passes through the `unsafe` and `confidence` columns once Person 1 adds them. `heat_model.heat.heat_at` below still works and gives the same values; the app just doesn't need it.
+> - **Shade formula for fixes:** `s1 = s0 + (1 − s0) × shade_gain`, as in the `apply_fix` section below; it's now in `engine._calculate_fix`.
+
 ## The one import you need
 
 From the repo root (where `engine.py` lives):
@@ -87,7 +91,7 @@ Run it for every hour in `HOURS` to get the day's before and after.
 
 - **At 7am, 8am and 7pm, coolest = shortest.** Heat stays below 32°C everywhere, so exposure is zero. (At 7am every link reads 26.4°C: the sun is not up yet.) At 9am and 6pm only the most exposed links pass 32°C. Test routing at 1pm, where the spread is widest (33.0 to 42.8°C).
 - **Heat differs between links only through shade and surface.** Air temperature, sunlight and wind are the same across the area in any given hour. That's why the covered walkways and tree-lined streets stand out.
-- **`heat_at` reads the file once and caches it.** If the heat model is re-run while your app is open, restart it to pick up the new numbers.
+- **`heat_model.heat.heat_at` reads the file once and caches it** (restart after a re-run). `engine.heat_at` reads it on every call.
 - **Some links are gated-estate streets** (`private = True` in `links.geojson`). They are included on purpose: residents walk their own estate's streets.
 - **Link IDs are frozen.** Don't re-pull the area; your flows and fixes are keyed by `link_id`.
 

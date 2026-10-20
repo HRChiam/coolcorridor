@@ -2,19 +2,20 @@
 
 For Person 3 (web app and sensor simulator). This covers what the heat model gives you, for the simulator and for each app tab, and how to run the sensor correction once your readings exist. Every snippet here has been run against the current data.
 
-## The import
+## The imports
 
 From the repo root:
 
 ```python
-from heat_model.heat import heat_at, design_weather, HOURS
+import engine                                # Person 2's module: the contract functions
+from heat_model.heat import design_weather   # the weather of the modelled day
 ```
 
 | Name | What it gives you |
 |---|---|
-| `heat_at(hour)` | GeoDataFrame, one row per walking link (1,491) at that hour (7 to 19). Columns: `link_id`, `u`, `v`, `name`, `length_m`, `covered`, `canopy`, `surface`, `albedo`, `geometry` (LineString, longitude/latitude), `shade` (0 to 1), `heat_model` (°C), `heat` (°C, sensor-corrected once the correction has run; until then equal to `heat_model`) |
+| `engine.heat_at(hour)` | GeoDataFrame, one row per walking link (1,491) at that hour (7 to 19). It has every column of `links.geojson` (`link_id`, `name`, `length_m`, `covered`, `canopy`, `surface`, `albedo`, `geometry` as LineString in longitude/latitude, and from Wednesday `unsafe` and `confidence`), plus `heat_score` (°C: sensor-corrected once the correction has run, otherwise the model), `heat_model` (°C, never corrected), `shade` (0 to 1) and `hour`. **Use this one** for the map, not `heat_model.heat.heat_at`, so the map and the routes always agree. |
 | `design_weather()` | The day we model, **6 Sep 2026**, indexed by hour: `air_temp_c`, `rh_pct`, `sw_wm2` (sunlight), `wind_ms`, `sun_elev_deg`, `sun_azim_deg` |
-| `HOURS` | `range(7, 20)`, for the 7am to 7pm slider |
+| `engine.HOURS` | `(7, 8, …, 19)`, for the 7am to 7pm slider |
 
 The app reads these files and never needs to download anything. It needs `geopandas` and `pandas` for this import, not `osmnx`, `pvlib` or `rasterio`.
 
@@ -53,10 +54,10 @@ rh = np.interp(hh, w.index, w.rh_pct)
 sun = np.interp(hh, w.index, w.sw_wm2)
 
 # For each site's shade and reflectivity, use the model's values for that hour
-at_1pm = sites.merge(heat_at(13)[["link_id", "shade", "albedo"]], on="link_id")
+at_1pm = sites.merge(engine.heat_at(13)[["link_id", "shade", "albedo"]], on="link_id")
 ```
 
-Then follow the spec: air = `air` + `offset_c` + noise; surface = air + (1 − `shade`) × `sun` ÷ 1000 × 25 × (1 − `albedo`) + noise. Take `shade` from `heat_at(hour)` for each reading's hour, because shade changes through the day (S05, the covered walkway, is always 1.0).
+Then follow the spec: air = `air` + `offset_c` + noise; surface = air + (1 − `shade`) × `sun` ÷ 1000 × 25 × (1 − `albedo`) + noise. Take `shade` from `engine.heat_at(hour)` for each reading's hour, because shade changes through the day (S05, the covered walkway, is always 1.0).
 
 ### `data/sensors_stream.csv`
 
@@ -80,7 +81,7 @@ The correction only uses your file, so whoever makes `sensors_stream.csv` can ru
 ```
 
 - It prints the **Sensor correction** results number: the model's error against the sensors, before and after correction, in °C.
-- It writes the corrected heat into `data/links.geojson` (after that, `heat_at()` returns corrected `heat`) and per-sensor errors to `data/sensor_validation.csv`.
+- It writes the corrected heat into `data/links.geojson` (after that, `engine.heat_at()` returns the corrected `heat_score`, and routes and the planner use it too) and per-sensor errors to `data/sensor_validation.csv`.
 - **Only one person runs it and commits those two files.** If two people do, git will report a conflict on `links.geojson`.
 - Report it honestly: the simulator adds a fixed offset per site, so the correction is bound to learn it. The drop in error shows the method works; it isn't evidence of real-world accuracy.
 
@@ -88,14 +89,14 @@ The correction only uses your file, so whoever makes `sensors_stream.csv` can ru
 
 ### Heat Map tab
 
-- **Colour:** `heat_at(hour).heat`. Fix the colour scale to **26 to 44°C** for every hour. Over the day the heat runs from 26.4 to 43.1°C, so a fixed scale makes the map visibly heat up and cool down as the slider moves.
-- **Slider:** `HOURS`. Every hour is precomputed, so moving the slider only reads columns.
+- **Colour:** `engine.heat_at(hour).heat_score`. Fix the colour scale to **26 to 44°C** for every hour. Over the day the heat runs from 26.4 to 43.1°C, so a fixed scale makes the map visibly heat up and cool down as the slider moves.
+- **Slider:** `engine.HOURS`. Every hour is precomputed, so moving the slider only reads columns.
 - **Toggles:** covered walkways = `covered`; trees = `canopy > 0`; shade = `shade`.
 - **Buildings layer** (optional): `data/buildings.geojson`, with `height_m`.
 - **Drawing links with pydeck's PathLayer:**
 
 ```python
-g = heat_at(hour)
+g = engine.heat_at(hour)
 g["path"] = [list(map(list, geom.coords)) for geom in g.geometry]   # [[lon, lat], ...]
 ```
 
@@ -111,7 +112,7 @@ These come from Person 2's `engine.py` (`route()`, `priorities()`, `apply_fix()`
 
 ## Things to know
 
-- `heat_at` reads `links.geojson` once and caches it. After the heat model or the correction re-runs, restart the app.
+- `engine.heat_at` reads `links.geojson` on every call (about 0.1 s). Wrap it in `st.cache_data` so the slider stays quick, and clear the cache (or restart the app) after the heat model or the correction re-runs.
 - Don't edit `links.geojson` by hand. The heat model's scripts rewrite it.
 - Link IDs are frozen. Everything (sensors, flows, fixes) is keyed by `link_id`.
 - `data/coverage_map.html` and `data/tagging_map.html` are working maps on Person 1's machine only, not in the repo.
