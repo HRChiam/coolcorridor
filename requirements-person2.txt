@@ -1,0 +1,6 @@
+pandas
+geopandas
+networkx
+shapely
+pyproj
+pytest
