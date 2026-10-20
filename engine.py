@@ -5,7 +5,7 @@ Public integration contract:
     latest_sensors() -> pandas.DataFrame
     route(origin_id, dest_id, hour, mode) -> dict
     priorities(budget_rm) -> pandas.DataFrame
-    apply_fix(link_id, fix) -> dict
+    apply_fix(link_ids, fix) -> dict   (one link_id or a list)
 
 Input files are read from DATA_DIR, by default ./data beside this file.
 Person 1 owns links.geojson and weather.csv; Person 3 owns sensors_stream.csv.
@@ -505,34 +505,57 @@ def _benefit(fix_result: dict, hourly_flow: pd.Series, length_m: float) -> float
     )
 
 
-def apply_fix(link_id: Any, fix: str) -> dict:
+def apply_fix(link_ids: Any, fix: str) -> dict:
     """What-if simulation; returns before/after hourly heat and area-wide totals.
+
+    link_ids is one link_id or a list of them. For one link, the result is that
+    link's before/after plus area totals. For a list, it is {"links": [one result
+    per link], ...} with cost, person-minutes saved and area totals for all of
+    them together (benefits add up: flows follow shortest routes, not heat).
 
     Recomputes Person 1's solar heat FORMULA DIFFERENCE (without modifying links),
     so changes preserve its current hourly baseline including sensor corrections.
     """
+    single = isinstance(link_ids, str) or not hasattr(link_ids, "__iter__")
+    ids = [str(link_ids)] if single else list(dict.fromkeys(str(i) for i in link_ids))
+    if not ids:
+        raise ValueError("apply_fix needs at least one link_id")
     links = _read_links()
-    matched = links.loc[links.link_id == str(link_id)]
-    if matched.empty:
-        raise ValueError(f"Unknown link_id {link_id!r}")
+    unknown = [i for i in ids if i not in set(links.link_id)]
+    if unknown:
+        raise ValueError(f"Unknown link_id {unknown[0]!r}" if single else f"Unknown link_ids {unknown}")
     fixes = _read_fixes()
     named = fixes.loc[fixes["fix"] == fix]
     if named.empty:
         raise ValueError(f"Unknown fix {fix!r}; choices: {', '.join(fixes['fix'])}")
     radiation = _weather_radiation()
-    row = matched.iloc[0]
-    result = _calculate_fix(row, named.iloc[0], radiation)
     flows = walking_demand().set_index("link_id")
     total_before = _total_heat_exposure(links, flows)
-    benefit = _benefit(result, flows.loc[str(link_id)], float(row.length_m))
-    result["person_min_saved_day"] = round(benefit, 3)
-    result["benefit_per_rm"] = round(benefit / result["cost_rm"], 8)
-    result["area_before"] = round(total_before, 3)
-    result["area_after"] = round(max(0.0, total_before - benefit), 3)
-    result["area_units"] = "person-degree-C-minutes above comfort threshold per day"
-    del result["_baseline_heat"]
-    del result["_new_heat"]
-    return result
+    units = "person-degree-C-minutes above comfort threshold per day"
+
+    results = []
+    for link_id in ids:
+        row = links.loc[links.link_id == link_id].iloc[0]
+        result = _calculate_fix(row, named.iloc[0], radiation)
+        benefit = _benefit(result, flows.loc[link_id], float(row.length_m))
+        result["person_min_saved_day"] = round(benefit, 3)
+        result["benefit_per_rm"] = round(benefit / result["cost_rm"], 8)
+        result["area_before"] = round(total_before, 3)
+        result["area_after"] = round(max(0.0, total_before - benefit), 3)
+        result["area_units"] = units
+        del result["_baseline_heat"]
+        del result["_new_heat"]
+        results.append(result)
+    if single:
+        return results[0]
+
+    cost = sum(r["cost_rm"] for r in results)
+    saved = sum(r["person_min_saved_day"] for r in results)
+    return {"link_ids": ids, "fix": str(fix), "links": results,
+            "cost_rm": round(cost, 2), "person_min_saved_day": round(saved, 3),
+            "benefit_per_rm": round(saved / cost, 8),
+            "area_before": round(total_before, 3), "area_after": round(max(0.0, total_before - saved), 3),
+            "area_units": units, "data_label": SOURCE_NOTE}
 
 
 def _total_heat_exposure(links: gpd.GeoDataFrame, flow: pd.DataFrame) -> float:
