@@ -113,6 +113,18 @@ Compare like with like. **The sensors measure air temperature; the heat score is
 
 These come from Person 2's `engine.py` (`route()`, `priorities()`, `apply_fix()`). For the from/to dropdowns, use `data/places.geojson`: 66 places with `place_id`, `name` and `kind` (home 34, shop 25, park 4, community 2, transit 1). The three Serasi Residences blocks have 0 households because the building opens in Feb 2027. Label them "(opens Feb 2027)" if you list them.
 
+**Cool Route:**
+- The preference buttons map to `mode`: fastest → `"shortest"`, balanced → `"balanced"` (at most 10% longer), cooler → `"coolest"` (at most 25% longer). For example, `engine.route(origin_id, dest_id, hour, "balanced")`.
+- Cards: `distance_m`, `extra_distance_pct`, `minutes_in_sun`, `heat_avoided`. Draw `result["geometry"]` (a GeoJSON FeatureCollection) in colour, and the shortest route in grey from `result["shortest"]["link_ids"]`.
+- Every mode avoids unsafe roads. If a place can only be reached on one, `result["uses_unsafe"]` is `True` and `result["warning"]` holds a message to show. Today no trip needs one.
+
+**Planner:**
+- `engine.priorities(budget_rm, horizon_years=10)` returns the ranked fixes with `cost_rm` (building cost, which the budget covers), `upkeep_rm_per_year`, `cost_10y_rm` (build + 10 years of upkeep), `person_min_saved_day` (once fully working), `benefit_over_horizon` (allowing for time to take effect), `benefit_per_rm`, `weeks_to_effect` and `quick_win`; show the quick-win tag and a "10-year total cost" column per fix. Area totals are in `.attrs["area_before"]` and `.attrs["area_after"]`; money in `.attrs["spent_rm"]` (build), `.attrs["upkeep_rm_per_year"]` and `.attrs["cost_10y_rm"]`. Show it as "RM X to build, plus RM Y a year".
+- **The "next 12 months / 10 years" toggle** sets `horizon_years=1` or `horizon_years=10`. Label the results "with our assumed costs".
+- `engine.priorities(budget_rm, quick_wins_only=True)` ranks only fixes that work within months (sails, covered walkways, cool paving): "what helps this year".
+- `engine.apply_fix(link_id, fix)` gives the before/after for one link; pass a list of link IDs for several at once.
+- Each call takes a few seconds (it recomputes walking demand), so cache it with `st.cache_data`.
+
 ## Things to know
 
 - `engine.heat_at` reads `links.geojson` on every call (about 0.1 s). Wrap it in `st.cache_data` so the slider stays quick, and clear the cache (or restart the app) after the heat model or the correction re-runs.

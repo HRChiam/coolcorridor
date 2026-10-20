@@ -3,7 +3,7 @@
 Public integration contract:
     heat_at(hour) -> geopandas.GeoDataFrame
     latest_sensors() -> pandas.DataFrame
-    route(origin_id, dest_id, hour, mode) -> dict
+    route(origin_id, dest_id, hour, mode) -> dict   (mode: shortest | balanced | coolest)
     priorities(budget_rm) -> pandas.DataFrame
     apply_fix(link_ids, fix) -> dict   (one link_id or a list)
 
@@ -26,6 +26,7 @@ from typing import Any
 
 import geopandas as gpd
 import networkx as nx
+import numpy as np
 import pandas as pd
 from pyproj import Geod
 from shapely.geometry import LineString, MultiLineString, Point, mapping
@@ -34,6 +35,14 @@ DATA_DIR = Path(os.environ.get("COOLCORRIDOR_DATA_DIR", Path(__file__).resolve()
 COMFORT_C = 32.0  # Assumption from team build plan
 WALKING_METRES_PER_MIN = 72.0  # Assumption: 1.2 m/s
 MAX_COOLER_DETOUR = 1.25
+MAX_BALANCED_DETOUR = 1.10
+DETOUR_LIMITS = {"balanced": MAX_BALANCED_DETOUR, "coolest": MAX_COOLER_DETOUR}
+ROUTE_MODES = ("shortest", "balanced", "coolest")
+UNSAFE_COST_FACTOR = 10.0  # build plan: unsafe links only if a place is otherwise cut off
+BUDGET_STEP_RM = 10.0  # planner budget search resolution; costs round up to a step
+DEFAULT_HORIZON_YEARS = 10.0  # planner horizon; the app's toggle also offers 1 year ("next 12 months")
+WEEKS_PER_YEAR = 52.0
+MAX_BUDGET_STEPS = 50_000  # very large budgets use coarser steps to stay fast
 LAMBDA_VALUES = (5, 10, 20, 40, 80, 160)
 HOURS = tuple(range(7, 20))
 # Weather model coefficients from Person 1 build-plan formula:
@@ -46,7 +55,8 @@ HOURLY_TRIP_WEIGHTS = (0.13, 0.12, 0.07, 0.05, 0.05, 0.06, 0.06,
 SOURCE_NOTE = "modelled; prices, trip rates and comfort limit are assumptions"
 GEOD = Geod(ellps="WGS84")
 SENSOR_COLUMNS = ["sensor_id", "link_id", "timestamp", "air_temp_c", "rh_pct", "surface_temp_c", "source"]
-PRIORITY_COLUMNS = ["rank", "link_id", "fix", "cost_rm", "heat_drop", "person_min_saved_day", "benefit_per_rm"]
+PRIORITY_COLUMNS = ["rank", "link_id", "fix", "cost_rm", "upkeep_rm_per_year", "cost_10y_rm", "heat_drop",
+                    "person_min_saved_day", "benefit_over_horizon", "benefit_per_rm", "weeks_to_effect", "quick_win"]
 
 
 def set_data_dir(path: str | Path) -> None:
@@ -197,8 +207,15 @@ def _build_graph(links: gpd.GeoDataFrame, hour: int) -> nx.MultiGraph:
         graph.add_node(v, xy=p2)
         graph.add_edge(u, v, key=str(row["link_id"]), link_id=str(row["link_id"]),
                        length_m=float(row["length_m"]), heat_c=_heat(row, hour),
-                       shade=_shade(row, hour), geometry=row.geometry)
+                       shade=_shade(row, hour), unsafe=_truthy(row.get("unsafe", False)),
+                       geometry=row.geometry)
     return graph
+
+
+def _truthy(value: Any) -> bool:
+    if value is None or (isinstance(value, float) and math.isnan(value)):
+        return False
+    return str(value).strip().lower() in ("1", "true", "yes", "y")
 
 
 def _read_places() -> gpd.GeoDataFrame:
@@ -253,17 +270,37 @@ def _degree_minutes(edge: dict[str, Any]) -> float:
     return minutes * max(0.0, edge["heat_c"] - COMFORT_C)
 
 
-def _get_path(graph: nx.MultiGraph, source: str, target: str, penalty: float) -> tuple[list[str], list[dict]]:
-    def edge_weight(u: str, v: str, edges: dict) -> float:
-        return min(d["length_m"] + penalty * _degree_minutes(d) for d in edges.values())
+def _edge_cost(edge: dict[str, Any], penalty: float, unsafe_factor: float | None) -> float | None:
+    """length + penalty x heat exposure; unsafe links are skipped (None) unless a factor is given."""
+    cost = edge["length_m"] + penalty * _degree_minutes(edge)
+    if edge.get("unsafe"):
+        return None if unsafe_factor is None else cost * unsafe_factor
+    return cost
+
+
+def _get_path(graph: nx.MultiGraph, source: str, target: str, penalty: float,
+              unsafe_factor: float | None = None) -> tuple[list[str], list[dict]]:
+    def edge_weight(u: str, v: str, edges: dict) -> float | None:
+        costs = [c for c in (_edge_cost(d, penalty, unsafe_factor) for d in edges.values()) if c is not None]
+        return min(costs) if costs else None  # None hides the edge from Dijkstra
 
     nodes = nx.shortest_path(graph, source, target, weight=edge_weight, method="dijkstra")
     selected = []
     for u, v in zip(nodes, nodes[1:]):
-        parallel = graph.get_edge_data(u, v)
-        key = min(parallel, key=lambda k: (parallel[k]["length_m"] + penalty * _degree_minutes(parallel[k]), parallel[k]["length_m"], k))
+        parallel = {k: d for k, d in graph.get_edge_data(u, v).items()
+                    if _edge_cost(d, penalty, unsafe_factor) is not None}
+        key = min(parallel, key=lambda k: (_edge_cost(parallel[k], penalty, unsafe_factor), parallel[k]["length_m"], k))
         selected.append(parallel[key])
     return nodes, selected
+
+
+def _safe_path(graph: nx.MultiGraph, source: str, target: str,
+               penalty: float) -> tuple[list[str], list[dict], bool]:
+    """Path that skips unsafe links; if none exists, unsafe links cost 10x and the path is flagged."""
+    try:
+        return (*_get_path(graph, source, target, penalty), False)
+    except nx.NetworkXNoPath:
+        return (*_get_path(graph, source, target, penalty, UNSAFE_COST_FACTOR), True)
 
 
 def _route_stats(path: list[dict]) -> dict:
@@ -286,27 +323,33 @@ def _route_stats(path: list[dict]) -> dict:
     }
 
 
-def _route_in_graph(graph: nx.MultiGraph, src: str, dst: str, mode: str) -> dict:
-    """Shared route solver; expensive file reads happen only in public adapter."""
+def _route_in_graph(graph: nx.MultiGraph, src: str, dst: str, mode: str,
+                    max_detour: float | None = None) -> dict:
+    """Shared route solver; expensive file reads happen only in public adapter.
+
+    max_detour overrides the mode's detour cap (e.g. 1.30 for a sensitivity check).
+    """
     if src == dst:
         raise ValueError("Origin and destination snap to the same graph node")
     try:
-        _, baseline = _get_path(graph, src, dst, 0)
+        _, baseline, uses_unsafe = _safe_path(graph, src, dst, 0)
     except (nx.NodeNotFound, nx.NetworkXNoPath) as e:
         raise ValueError("No connected walking path between these points") from e
+    # Cooler candidates follow the same unsafe-link rule as the shortest route
+    unsafe_factor = UNSAFE_COST_FACTOR if uses_unsafe else None
     short = _route_stats(baseline)
     picked = baseline
-    if mode == "coolest":
+    if mode in DETOUR_LIMITS:
         best = (short["heat_exposure"], short["distance_m"])
         seen = set()
         for penalty in LAMBDA_VALUES:
-            _, candidate = _get_path(graph, src, dst, penalty)
+            _, candidate = _get_path(graph, src, dst, penalty, unsafe_factor)
             ids = tuple(edge["link_id"] for edge in candidate)
             if ids in seen:
                 continue
             seen.add(ids)
             stats = _route_stats(candidate)
-            if stats["distance_m"] > short["distance_m"] * MAX_COOLER_DETOUR + 1e-9:
+            if stats["distance_m"] > short["distance_m"] * (max_detour or DETOUR_LIMITS[mode]) + 1e-9:
                 continue
             contender = (stats["heat_exposure"], stats["distance_m"])
             if contender < best:
@@ -316,23 +359,27 @@ def _route_in_graph(graph: nx.MultiGraph, src: str, dst: str, mode: str) -> dict
         "mode": mode,
         "extra_distance_pct": round(100 * (output["distance_m"] / short["distance_m"] - 1), 2),
         "heat_avoided": round(max(0.0, short["heat_exposure"] - output["heat_exposure"]), 3),
+        "uses_unsafe": uses_unsafe,
+        "warning": ("No route avoids unsafe roads; this one uses a road without a known footpath"
+                    if uses_unsafe else None),
         "shortest": {k: v for k, v in short.items() if k != "geometry"},
-        "heat_units": "degree-C-minutes above 32C comfort threshold (assumed)",
+        "heat_units": f"degree-C-minutes above {COMFORT_C:g}C comfort threshold (assumed)",
         "data_label": "Person 1 heat model; corrections may use simulated sensors",
     })
     return output
 
 
 def route(origin_id: Any, dest_id: Any, hour: int, mode: str = "coolest") -> dict:
-    """Compute shortest or coolest route with a max 25% distance detour.
+    """Compute the shortest, balanced (max 10% detour) or coolest (max 25%) route.
 
-    For cool routes, run exactly six heat-weighted shortest-path searches using
+    For cooler routes, run exactly six heat-weighted shortest-path searches using
     lambda 5/10/20/40/80/160; choose minimal exposure among eligible candidates.
-    Does NOT enumerate all simple paths.
+    Does NOT enumerate all simple paths. Every mode skips links marked unsafe; if
+    that leaves no route, unsafe links cost 10x and the result has uses_unsafe=True.
     """
     hour = _validate_hour(hour)
-    if mode not in {"shortest", "coolest"}:
-        raise ValueError("mode must be 'shortest' or 'coolest'")
+    if mode not in ROUTE_MODES:
+        raise ValueError(f"mode must be one of {', '.join(repr(m) for m in ROUTE_MODES)}")
     links = heat_at(hour)
     graph = _build_graph(links, hour)
     places = _read_places()
@@ -391,7 +438,7 @@ def walking_demand() -> pd.DataFrame:
                 if home_node == dest_node:
                     continue
                 try:
-                    _, path = _get_path(graph, home_node, dest_node, 0)
+                    _, path, _ = _safe_path(graph, home_node, dest_node, 0)
                 except nx.NetworkXNoPath:
                     continue
                 dist = sum(e["length_m"] for e in path)
@@ -449,15 +496,19 @@ def _read_fixes() -> pd.DataFrame:
     if not path.is_file():
         raise FileNotFoundError(f"{path} missing: copy Person 2's interventions.csv into data/")
     fixes = pd.read_csv(path)
-    needed = {"fix", "cost_rm_per_m", "shade_gain", "albedo_gain", "note"}
+    needed = {"fix", "cost_rm_per_m", "shade_gain", "albedo_gain",
+              "weeks_to_effect", "maintenance_rm_per_year", "quick_win", "note"}
     if not needed.issubset(fixes):
         raise ValueError(f"interventions.csv must have {sorted(needed)}")
     if fixes["fix"].duplicated().any():
         raise ValueError("Fix names must be unique")
-    for c in ("cost_rm_per_m", "shade_gain", "albedo_gain"):
+    for c in ("cost_rm_per_m", "shade_gain", "albedo_gain", "weeks_to_effect", "maintenance_rm_per_year"):
         fixes[c] = pd.to_numeric(fixes[c], errors="raise")
+    fixes["quick_win"] = fixes["quick_win"].map(_truthy)
     if (fixes.cost_rm_per_m <= 0).any() or (fixes[["shade_gain", "albedo_gain"]] < 0).any().any():
         raise ValueError("Intervention cost must be positive and gains nonnegative")
+    if (fixes[["weeks_to_effect", "maintenance_rm_per_year"]] < 0).any().any():
+        raise ValueError("weeks_to_effect and maintenance_rm_per_year must be nonnegative")
     return fixes
 
 
@@ -485,6 +536,8 @@ def _calculate_fix(row: pd.Series, fix: pd.Series, radiation: dict[int, float]) 
     cost = length * float(fix["cost_rm_per_m"])
     return {"link_id": str(row["link_id"]), "fix": str(fix["fix"]),
             "cost_rm": round(cost, 2), "heat_drop": round(max(0.0, original_heat[13] - new_heat[13]), 4),
+            "weeks_to_effect": int(fix["weeks_to_effect"]), "quick_win": bool(fix["quick_win"]),
+            "maintenance_rm_per_year": round(length * float(fix["maintenance_rm_per_year"]), 2),
             "before": {"albedo": original_alpha,
                        "heat_by_hour": {f"h{h:02d}": round(original_heat[h], 4) for h in HOURS},
                        "shade_by_hour": {f"h{h:02d}": round(original_shade[h], 4) for h in HOURS}},
@@ -554,6 +607,8 @@ def apply_fix(link_ids: Any, fix: str) -> dict:
     return {"link_ids": ids, "fix": str(fix), "links": results,
             "cost_rm": round(cost, 2), "person_min_saved_day": round(saved, 3),
             "benefit_per_rm": round(saved / cost, 8),
+            "weeks_to_effect": results[0]["weeks_to_effect"], "quick_win": results[0]["quick_win"],
+            "maintenance_rm_per_year": round(sum(r["maintenance_rm_per_year"] for r in results), 2),
             "area_before": round(total_before, 3), "area_after": round(max(0.0, total_before - saved), 3),
             "area_units": units, "data_label": SOURCE_NOTE}
 
@@ -570,69 +625,180 @@ def _total_heat_exposure(links: gpd.GeoDataFrame, flow: pd.DataFrame) -> float:
     return total
 
 
-def priorities(budget_rm: float) -> pd.DataFrame:
-    """Greedy cost-benefit ranking of one selected intervention per link.
+def _best_mix(options: list[dict], budget_rm: float, cost_key: str = "cost_rm",
+              benefit_key: str = "person_min_saved_day") -> list[dict]:
+    """The set of fixes with the most person-minutes saved within the budget, at most one per link.
 
-    Only positive-benefit improvements that fit within the budget are returned.
-    Benefit is (assumed daily walkers) x (walking minutes) x (degrees over 32C)
-    saved per day, not an empirically established health outcome.
+    Exact search (multiple-choice knapsack) by dynamic programming over the budget
+    in steps of BUDGET_STEP_RM, coarser for very large budgets. Costs are rounded UP
+    to a step, so the chosen set never exceeds the budget. Unlike picking fixes one
+    by one by benefit per RM, it doesn't leave money on the table.
     """
-    budget_rm = float(budget_rm)
-    if not math.isfinite(budget_rm) or budget_rm < 0:
-        raise ValueError("budget_rm must be a nonnegative, finite amount")
-    links = _read_links()
-    flow = walking_demand().set_index("link_id")
-    fixes = _read_fixes()
+    if not options or budget_rm <= 0:
+        return []
+    step = max(BUDGET_STEP_RM, math.ceil(budget_rm / MAX_BUDGET_STEPS))
+    capacity = int(budget_rm // step)
+    groups: dict[str, list[dict]] = defaultdict(list)
+    for option in options:
+        groups[option["link_id"]].append(option)
+    group_list = list(groups.values())
+
+    def steps(option: dict) -> int:
+        return math.ceil(option[cost_key] / step - 1e-9)
+
+    best = np.zeros(capacity + 1)  # best[c]: most benefit with at most c budget steps
+    choices = np.full((len(group_list), capacity + 1), -1, dtype=np.int8)
+    for g, group in enumerate(group_list):
+        new = best.copy()
+        for j, option in enumerate(group):
+            w = steps(option)
+            if w > capacity:
+                continue
+            candidate = np.full(capacity + 1, -np.inf)
+            candidate[w:] = best[:capacity + 1 - w] + option[benefit_key]
+            better = candidate > new + 1e-12
+            new[better] = candidate[better]
+            choices[g, better] = j
+        best = new
+
+    picked, c = [], capacity
+    for g in range(len(group_list) - 1, -1, -1):
+        j = choices[g, c]
+        if j >= 0:
+            picked.append(group_list[g][j])
+            c -= steps(group_list[g][j])
+    return picked
+
+
+def effect_share(weeks_to_effect: float, horizon_weeks: float) -> float:
+    """Average share of a fix's full effect over the horizon.
+
+    The effect is assumed to grow steadily from nothing to full over weeks_to_effect,
+    then stay full: 1 - w/(2H) if the fix is fully working within the horizon,
+    otherwise H/(2w) (e.g. a tree needing 5 years gives 10% over 12 months).
+    """
+    w, h = float(weeks_to_effect), float(horizon_weeks)
+    if w <= 0:
+        return 1.0
+    return 1 - w / (2 * h) if w <= h else h / (2 * w)
+
+
+def _check_horizon(horizon_years: float) -> float:
+    horizon_years = float(horizon_years)
+    if not math.isfinite(horizon_years) or horizon_years <= 0:
+        raise ValueError("horizon_years must be positive")
+    return horizon_years
+
+
+def _fix_options(links: gpd.GeoDataFrame, flow: pd.DataFrame, fixes: pd.DataFrame,
+                 horizon_years: float, upkeep_scale: float = 1.0) -> list[dict]:
+    """Every (link, fix) with a positive benefit over the horizon, with its costs."""
     radiation = _weather_radiation()
-    proposed = []
+    options = []
     for _, row in links.iterrows():
         for _, fix in fixes.iterrows():
             result = _calculate_fix(row, fix, radiation)
             benefit = _benefit(result, flow.loc[str(row.link_id)], float(row.length_m))
             cost = result["cost_rm"]
-            if benefit > 1e-9 and cost > 0:
-                proposed.append({"link_id": str(row.link_id), "fix": fix["fix"],
-                                 "cost_rm": cost, "heat_drop": result["heat_drop"],
-                                 "person_min_saved_day": benefit,
-                                 "benefit_per_rm": benefit / cost})
-    proposed.sort(key=lambda d: (-d["benefit_per_rm"], -d["person_min_saved_day"], d["cost_rm"], d["link_id"]))
-    spent = 0.0
-    used_links = set()
-    selected = []
-    for option in proposed:
-        if option["link_id"] in used_links or spent + option["cost_rm"] > budget_rm + 1e-7:
-            continue
-        used_links.add(option["link_id"])
-        spent += option["cost_rm"]
-        selected.append({"rank": len(selected) + 1, **option})
+            upkeep = result["maintenance_rm_per_year"] * upkeep_scale
+            benefit_h = benefit * effect_share(result["weeks_to_effect"], horizon_years * WEEKS_PER_YEAR)
+            if benefit_h > 1e-9 and cost > 0:
+                options.append({"link_id": str(row.link_id), "fix": fix["fix"],
+                                "cost_rm": cost, "upkeep_rm_per_year": round(upkeep, 2),
+                                "cost_10y_rm": round(cost + 10 * upkeep, 2),
+                                "heat_drop": result["heat_drop"],
+                                "person_min_saved_day": benefit,
+                                "benefit_over_horizon": benefit_h,
+                                "benefit_per_rm": benefit_h / cost,
+                                "weeks_to_effect": result["weeks_to_effect"],
+                                "quick_win": result["quick_win"]})
+    return options
+
+
+def fix_options(horizon_years: float = DEFAULT_HORIZON_YEARS, upkeep_scale: float = 1.0) -> pd.DataFrame:
+    """All candidate fixes (one row per link and fix) with benefit and costs.
+
+    upkeep_scale multiplies the assumed upkeep, for sensitivity checks; value_10y
+    is benefit over the horizon per RM of 10-year total cost (build + 10 x upkeep).
+    """
+    horizon_years = _check_horizon(horizon_years)
+    options = pd.DataFrame(_fix_options(_read_links(), walking_demand().set_index("link_id"),
+                                        _read_fixes(), horizon_years, upkeep_scale))
+    if not options.empty:
+        options["value_10y"] = options["benefit_over_horizon"] / options["cost_10y_rm"]
+    return options
+
+
+def priorities(budget_rm: float, quick_wins_only: bool = False,
+               horizon_years: float = DEFAULT_HORIZON_YEARS) -> pd.DataFrame:
+    """Best set of interventions within the building budget, at most one per link, ranked.
+
+    The budget covers building (upfront) costs only; upkeep is shown alongside,
+    per fix (upkeep_rm_per_year, cost_10y_rm = build + 10 x upkeep) and in total
+    (.attrs), since build and upkeep budgets usually differ.
+    Fixes are judged over a horizon (the app's toggle: 1 year = "next 12 months",
+    10 years): benefit_over_horizon = full daily benefit x effect_share(weeks to
+    take effect, horizon). The set is found by an exact search (see _best_mix),
+    then listed by benefit per RM of build cost.
+    Only positive-benefit improvements that fit within the budget are returned.
+    Benefit is (assumed daily walkers) x (walking minutes) x (degrees over 32C)
+    saved per day, not an empirically established health outcome. Each fix
+    carries weeks_to_effect and quick_win; quick_wins_only=True ranks only fixes
+    that work within months, i.e. what helps this year.
+    """
+    budget_rm = float(budget_rm)
+    if not math.isfinite(budget_rm) or budget_rm < 0:
+        raise ValueError("budget_rm must be a nonnegative, finite amount")
+    horizon_years = _check_horizon(horizon_years)
+    links = _read_links()
+    flow = walking_demand().set_index("link_id")
+    fixes = _read_fixes()
+    if quick_wins_only:
+        fixes = fixes[fixes.quick_win]
+    proposed = _fix_options(links, flow, fixes, horizon_years)
+    picked = _best_mix(proposed, budget_rm, cost_key="cost_rm", benefit_key="benefit_over_horizon")
+    picked.sort(key=lambda d: (-d["benefit_per_rm"], -d["benefit_over_horizon"], d["cost_rm"], d["link_id"]))
+    selected = [{"rank": i + 1, **option} for i, option in enumerate(picked)]
     answer = pd.DataFrame(selected, columns=PRIORITY_COLUMNS)
-    for col in ("person_min_saved_day", "benefit_per_rm", "heat_drop"):
+    for col in ("person_min_saved_day", "benefit_over_horizon", "benefit_per_rm", "heat_drop"):
         if col in answer:
             answer[col] = answer[col].round(5)
     answer.attrs["budget_rm"] = budget_rm
-    answer.attrs["spent_rm"] = round(spent, 2)
+    answer.attrs["horizon_years"] = horizon_years
+    answer.attrs["spent_rm"] = round(sum(o["cost_rm"] for o in picked), 2)  # building cost
+    answer.attrs["upkeep_rm_per_year"] = round(sum(o["upkeep_rm_per_year"] for o in picked), 2)
+    answer.attrs["cost_10y_rm"] = round(sum(o["cost_10y_rm"] for o in picked), 2)
     answer.attrs["area_before"] = round(_total_heat_exposure(links, flow), 3)
-    answer.attrs["area_after"] = round(max(0.0, answer.attrs["area_before"] - answer["person_min_saved_day"].sum()), 3)
+    # Average over the horizon: fixes still growing count for part of their effect
+    answer.attrs["area_after"] = round(max(0.0, answer.attrs["area_before"] - answer["benefit_over_horizon"].sum()), 3)
     answer.attrs["data_label"] = SOURCE_NOTE
     return answer
 
 
-def save_priorities(budget_rm: float, output_file: str | Path | None = None) -> pd.DataFrame:
+def save_priorities(budget_rm: float, output_file: str | Path | None = None,
+                    horizon_years: float = DEFAULT_HORIZON_YEARS) -> pd.DataFrame:
     """Explicitly write ONLY Person 2's priorities.csv."""
-    table = priorities(budget_rm)
+    table = priorities(budget_rm, horizon_years=horizon_years)
     output = Path(output_file) if output_file is not None else DATA_DIR / "priorities.csv"
     output.parent.mkdir(parents=True, exist_ok=True)
     table.to_csv(output, index=False)
     return table
 
 
-def route_summary(sample_limit: int | None = None, hour: int | None = None) -> dict:
+def route_summary(sample_limit: int | None = None, hour: int | None = None, mode: str = "coolest",
+                  max_detour: float | None = None) -> dict:
     """Report the modelled cooler-route share and per-trip benefits.
 
     Hour=None evaluates all hours 07..19, weighted by assumed trip demand per
     home and destination category. If hour is given, evaluates that hour only.
     Uses nearest destination by WALKING distance, as walking_demand() does.
+    mode is "coolest" (max 25% detour, the results number) or "balanced" (10%);
+    max_detour overrides the cap for a sensitivity check (e.g. 1.30).
+    The cooler-route share is reported against all trips and against the trips
+    whose shortest route has any heat exposure (only those can be improved).
     """
+    if mode not in DETOUR_LIMITS:
+        raise ValueError(f"mode must be one of {', '.join(repr(m) for m in DETOUR_LIMITS)}")
     hours = HOURS if hour is None else (_validate_hour(hour),)
     links = _read_links()
     places = _read_places()
@@ -654,7 +820,7 @@ def route_summary(sample_limit: int | None = None, hour: int | None = None) -> d
                 if dest_node == home_node:
                     continue
                 try:
-                    _, path = _get_path(graph_7am, home_node, dest_node, 0)
+                    _, path, _ = _safe_path(graph_7am, home_node, dest_node, 0)
                 except nx.NetworkXNoPath:
                     continue
                 length = sum(e["length_m"] for e in path)
@@ -666,7 +832,8 @@ def route_summary(sample_limit: int | None = None, hour: int | None = None) -> d
                 break
         if sample_limit is not None and len(od_pairs) >= sample_limit:
             break
-    totals = {"total": 0., "improved": 0., "heat": 0., "distance_pct": 0., "sun_minutes": 0.}
+    totals = {"total": 0., "exposed": 0., "improved": 0., "heat": 0., "distance_pct": 0., "sun_minutes": 0.,
+              "unsafe": 0.}
     for h in hours:
         graph = _build_graph(links, h)
         trip_hour_weight = HOURLY_TRIP_WEIGHTS[h - 7] / sum(HOURLY_TRIP_WEIGHTS)
@@ -675,10 +842,12 @@ def route_summary(sample_limit: int | None = None, hour: int | None = None) -> d
             if weight <= 0:
                 continue
             try:
-                cool = _route_in_graph(graph, src, dst, "coolest")
+                cool = _route_in_graph(graph, src, dst, mode, max_detour)
             except ValueError:
                 continue
             totals["total"] += weight
+            totals["exposed"] += weight * (cool["shortest"]["heat_exposure"] > 1e-9)
+            totals["unsafe"] += weight * cool["uses_unsafe"]
             if cool["heat_avoided"] > 1e-9:
                 totals["improved"] += weight
                 totals["heat"] += weight * cool["heat_avoided"]
@@ -692,9 +861,15 @@ def route_summary(sample_limit: int | None = None, hour: int | None = None) -> d
     improved = totals["improved"]
     return {
         "trips_with_cooler_route_pct": round(100 * improved / totals["total"], 2) if totals["total"] else 0.0,
+        "trips_with_heat_exposure_pct": round(100 * totals["exposed"] / totals["total"], 2) if totals["total"] else 0.0,
+        "exposed_trips_with_cooler_route_pct": (round(100 * improved / totals["exposed"], 2)
+                                                if totals["exposed"] else 0.0),
         "mean_heat_avoided_per_improved_trip": round(totals["heat"] / improved, 3) if improved else 0.0,
         "mean_extra_distance_pct_per_improved_trip": round(totals["distance_pct"] / improved, 2) if improved else 0.0,
         "mean_sun_minutes_avoided_per_improved_trip": round(totals["sun_minutes"] / improved, 2) if improved else 0.0,
+        "trips_needing_unsafe_link_pct": round(100 * totals["unsafe"] / totals["total"], 2) if totals["total"] else 0.0,
+        "mode": mode,
+        "max_detour_pct": round(100 * ((max_detour or DETOUR_LIMITS[mode]) - 1)),
         "evaluated_home_destination_pairs": len(od_pairs),
         "hour": hour if hour is not None else "07:00-19:00 demand-weighted",
         "data_label": SOURCE_NOTE,
