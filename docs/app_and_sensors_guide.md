@@ -80,10 +80,10 @@ The correction only uses your file, so whoever makes `sensors_stream.csv` can ru
 .venv\Scripts\python.exe heat_model\sensor_correction.py
 ```
 
-- It prints the **Sensor correction** results number: the model's error against the sensors, before and after correction, in °C.
-- It writes the corrected heat into `data/links.geojson` (after that, `engine.heat_at()` returns the corrected `heat_score`, and routes and the planner use it too) and per-sensor errors to `data/sensor_validation.csv`.
+- It prints the **pipeline check** results number: the model's error against the simulated sensors, before and after correction, in °C.
+- It writes the corrected heat into `data/links.geojson` (after that, `engine.heat_at()` returns the corrected `heat_score`, and routes and the planner use it too) and the errors to `data/sensor_pipeline_check.csv`.
 - **Only one person runs it and commits those two files.** If two people do, git will report a conflict on `links.geojson`.
-- Report it honestly: the simulator adds a fixed offset per site, so the correction is bound to learn it. The drop in error shows the method works; it isn't evidence of real-world accuracy.
+- **Call it a pipeline check, never validation or accuracy** (the plan's rule). The simulator adds a fixed offset per site, so the correction is bound to learn it: the drop in error shows the code works, not that the model is accurate.
 
 ## Part 2: the app
 
@@ -92,6 +92,9 @@ The correction only uses your file, so whoever makes `sensors_stream.csv` can ru
 - **Colour:** `engine.heat_at(hour).heat_score`. Fix the colour scale to **26 to 44°C** for every hour. Over the day the heat runs from 26.4 to 43.1°C, so a fixed scale makes the map visibly heat up and cool down as the slider moves.
 - **Slider:** `engine.HOURS`. Every hour is precomputed, so moving the slider only reads columns.
 - **Toggles:** covered walkways = `covered`; trees = `canopy > 0`; shade = `shade`.
+- **Faded links:** draw links with `confidence == "low"` at reduced opacity. `confidence` is `high` (hand-tagged and within 150 m of a sensor, 49 links), `medium` (hand-tagged, 14) or `low` (values borrowed from other links, 1,428), so most of the map is faded and the checked main routes stand out.
+- **Share of the network in shade** at the chosen hour: `(g.shade * g.length_m).sum() / g.length_m.sum()`. At 1pm it's 19.7%. This is the same definition as Person 1's shade-coverage result.
+- **Unsafe links** (`unsafe == True`, 60 main-road links with no known footpath) are left out of routes by Person 2. Showing them on the map, e.g. as a dashed line, is optional.
 - **Buildings layer** (optional): `data/buildings.geojson`, with `height_m`.
 - **Drawing links with pydeck's PathLayer:**
 

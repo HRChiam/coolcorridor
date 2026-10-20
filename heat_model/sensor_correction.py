@@ -9,12 +9,14 @@ Links within RADIUS_M of a sensor are nudged by its offset, weighted by distance
 sensor's link 62 m away, which reads the opposite way). The heat score moves
 one-for-one with air temperature, so corrected heat = heat + correction.
 
-Validation (a results number): the model's error at each sensor-hour is |offset|
-before correction. After correction, each hour is corrected with the previous
-hour's readings, so the error is measured on readings the correction hasn't seen.
+Pipeline check (a results number, NOT validation: the sensors are simulated from
+our own assumptions, so this shows the code works, not that the model is accurate):
+the model's error at each sensor-hour is |offset| before correction. After
+correction, each hour is corrected with the previous hour's readings, so the error
+is measured on readings the correction hasn't seen.
 
 Writes heat_corr_h07..heat_corr_h19 into data/links.geojson (heat_at() serves them)
-and per-sensor errors to data/sensor_validation.csv.
+and the errors, per sensor and overall ("all"), to data/sensor_pipeline_check.csv.
 
 Run after heat.py:
   .venv/Scripts/python heat_model/sensor_correction.py [--readings data/sensors_stream.csv]
@@ -64,7 +66,7 @@ def correction(weights, offsets):
     return pd.Series(w.max(axis=1) * offsets.to_numpy()[nearest], index=weights.index)
 
 
-def validate(weights, offsets, sensors):
+def pipeline_check(weights, offsets, sensors):
     """Error at each sensor-hour before correction, and after correcting with the previous hour."""
     by_hour = offsets.pivot(index="hour", columns="sensor_id", values="offset")
     rows = []
@@ -102,18 +104,21 @@ def main():
         links[f"heat_corr_h{hour:02d}"] = (links[f"heat_h{hour:02d}"] + corr).round(2)
     links.to_file(DATA / "links.geojson", driver="GeoJSON")
 
-    v = validate(weights, offsets, sensors)
+    v = pipeline_check(weights, offsets, sensors)
     per_sensor = v.groupby("sensor_id")[["error_before", "error_after"]].mean().round(2)
     per_sensor["mean_offset_c"] = offsets.groupby("sensor_id").offset.mean().round(2)
-    per_sensor.to_csv(DATA / "sensor_validation.csv")
+    per_sensor.loc["all"] = [round(v.error_before.mean(), 2), round(v.error_after.mean(), 2), np.nan]
+    per_sensor.to_csv(DATA / "sensor_pipeline_check.csv")
 
     expected = len(sensors) * len(HOURS)
     print(f"{len(readings)} readings from {len(sensors)} sensors; {len(offsets)} of {expected} sensor-hours usable")
     print(per_sensor.to_string())
-    print(f"\nModel error vs sensors (mean absolute, °C): before {v.error_before.mean():.2f}, "
-          f"after {v.error_after.mean():.2f} (corrected with the previous hour's readings, {len(v)} sensor-hours)")
+    print(f"\nPipeline check (NOT validation: the sensors are simulated): model error vs simulated sensors "
+          f"(mean absolute, °C) before {v.error_before.mean():.2f}, after {v.error_after.mean():.2f} "
+          f"(corrected with the previous hour's readings, {len(v)} sensor-hours)")
     touched = (weights.max(axis=1) > 0).sum()
-    print(f"Wrote heat_corr_h07..heat_corr_h19 ({touched} links within {RADIUS_M} m of a sensor) and sensor_validation.csv")
+    print(f"Wrote heat_corr_h07..heat_corr_h19 ({touched} links within {RADIUS_M} m of a sensor) "
+          f"and sensor_pipeline_check.csv")
 
 
 if __name__ == "__main__":

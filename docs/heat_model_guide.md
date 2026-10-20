@@ -5,6 +5,7 @@ For Person 2 (routing and planner). This is everything from the heat model that 
 > **Update, 20 Oct.** This guide was written before `engine.py` existed. Agreed since then:
 > - **`engine.heat_at` (yours) is the one `heat_at` the app uses.** It now takes the sensor-corrected `heat_corr_hNN` columns when they exist, and so do routing, fixes and area totals (through `_heat`). It also passes through the `unsafe` and `confidence` columns once Person 1 adds them. `heat_model.heat.heat_at` below still works and gives the same values; the app just doesn't need it.
 > - **Shade formula for fixes:** `s1 = s0 + (1 − s0) × shade_gain`, as in the `apply_fix` section below; it's now in `engine._calculate_fix`.
+> - **`unsafe` column is ready** (boolean, in `links.geojson` and so in `engine.heat_at`): 60 main-road links with no known footpath, with the reason in `unsafe_reason`. Every place can still reach the LRT without them, so your 10× fallback is a safety net rather than something today's data needs. `confidence` (high / medium / low) is there too.
 
 ## The one import you need
 

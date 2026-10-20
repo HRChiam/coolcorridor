@@ -1,4 +1,4 @@
-rank,link_id,name,highway,length_m,surface,canopy,covered,shade_h13,heat_h13,minutes_above_comfort
+rank,link_id,name,highway,length_m,surface,canopy,covered,shade_h13,heat_1pm,minutes_above_comfort
 1,L0027,Jalan Putra Setia 6/1,residential,30.6,asphalt,0.0,False,0.0,42.78,600
 2,L0787,Persiaran Putra Perdana,secondary,69.8,asphalt,0.0,False,0.0,42.78,600
 3,L1448,Jalan Putra Indera 5,unclassified,148.4,asphalt,0.0,False,0.0,42.78,600

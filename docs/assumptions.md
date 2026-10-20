@@ -20,23 +20,35 @@ Every assumption and simulated input in CoolCorridor, as the organisers require.
 | Serasi occupancy | 0 households counted; the towers are kept because they already stand and cast shadows | Completion is Feb 2027, so the model represents Putra Heights today |
 | Households in houses | 1 per house footprint; homes grouped into 200 m cells (855 households, all households in the model) | Our estimate from OSM footprints |
 | Surface reflectivity (albedo) | Asphalt 0.10, concrete 0.30, paver 0.25, grass 0.25 | Asphalt and concrete: aged-pavement values from US EPA, *Reducing Urban Heat Islands: Compendium of Strategies – Cool Pavements*, p. 5, Fig. 4 (asphalt lightens from ~0.05 new; concrete darkens from ~0.40 new). Paver and grass: our estimate within the same range |
-| Hand-tagged links | The 60 most-walked links (6.0 km, 55% of household walking distance), plus the S08 sensor site: covered, surface, canopy | Street View by hand (real); canopy estimated by eye in steps of 0.25 |
+| Hand-tagged links | The 60 most-walked links (6.0 km, 55% of household walking distance), plus the S08 sensor site and 2 links on the main road east of the station (checked for a footpath): covered, surface, canopy | Street View by hand (real); canopy estimated by eye in steps of 0.25 |
 | Untagged links | Canopy and surface borrowed from tagged links on the same street (199 links), else the same road type with at least 4 tagged links (1,076); the remaining 156 keep canopy 0 | Our estimate from the hand tags |
 | Satellite canopy | Not used: ESA WorldCover (10 m) and Meta canopy height (1 m) did not match the hand tags (correlation ≤ 0.07) | Tested |
 | Default surface | Footpaths concrete, roads asphalt, where neither tags nor borrowing apply | Our estimate |
 | Covered walkways | OSM `covered=yes` (18 links) plus hand tags | Real (OSM + hand) |
 | Walking network | OSM walk network pulled 1,200 m around the station, including gated-estate streets (`access=private`); homes and places within 800 m | Gated estates connect only through gates beyond 800 m; residents walk their own streets |
-| Sensor correction | Each link within 150 m of a sensor takes its nearest sensor's air-temperature offset, scaled by 1 − distance/150 m; the heat score shifts one-for-one | Our method |
+| Sensor correction | Each link within 150 m of a sensor takes its nearest sensor's air-temperature offset, scaled by 1 − distance/150 m; the heat score shifts one-for-one | Our method. Its before/after error is a **pipeline check, not validation**: the sensors are simulated from our own assumptions |
 | Sensor reading per hour | Median of readings within ±30 min of the hour | Ignores spikes; a silent sensor is skipped that hour |
+| Unsafe links | A main road (primary, trunk, secondary or their slip roads) is unsafe unless a footpath is known: an OSM sidewalk tag, or a paver or concrete walking surface seen on Street View on that link or on the same street. 60 links (3.2 km) are unsafe; other streets stay walkable | Plan's design rule. Approximate: OSM has no sidewalk tags at all in this area, so Street View evidence decides |
+| Unsafe exceptions | `data/unsafe_overrides.csv` sets any link safe or unsafe by hand | For busy roads spotted on demo routes |
+| Confidence per link | High: hand-tagged and within 150 m of a sensor site (49 links); medium: hand-tagged (14); low: neither (1,428) | Design choice |
+| Shade coverage | Share of network length in shade = Σ(shade × length) ÷ Σ length; after fixes, each fix blocks its `shade_gain` share of the sun still reaching the link | Our definition |
 
 ## Routing and planner (Person 2)
+
+Values as set in `engine.py` and `data/interventions.csv`.
 
 | Assumption | Value | Basis |
 |---|---|---|
 | Comfort line | 32°C | Our choice; to test at 30 and 34 |
-| Trips per household by hour and destination | To set | Our estimate |
-| Maximum detour for a cool route | 25% longer than shortest | Design choice |
-| Cost per fix (trees, shade sail, covered walkway, cool paving) | To find | Public figure if found, else assumption |
+| Walking speed | 72 m per minute (1.2 m/s) | Our estimate |
+| Trips per household per day (one way) | LRT 0.9, shops 0.45, park 0.15, community 0.10; spread over 7am–7pm by an assumed hourly profile; each trip goes to the nearest place of that kind | Our estimate; a local survey would replace it |
+| Maximum detour | Coolest route ≤ 25% longer than shortest; balanced ≤ 10% | Design choice |
+| Route search | Shortest path with cost = length + λ × heat exposure, λ = 5, 10, 20, 40, 80, 160 | Plan method |
+| Unsafe links in routing | Left out of every route; if that cuts a place off, they are used at 10× cost and the route is flagged (today every place can reach the LRT without them) | Plan rule |
+| Cost per fix | Shade trees RM 160/m, shade sail RM 350/m, covered walkway RM 1,000/m, cool paving RM 120/m | **Unverified assumptions**; local quotes needed |
+| Effect of each fix | Shade trees block 35% of remaining sun, shade sail 75%, covered walkway 100%; cool paving raises albedo by 0.30 | Our estimate |
+| Weeks to take effect and yearly maintenance per fix | To find (shade sail: weeks; trees: years to full shade) | Public figure if found, else assumption |
+| Planner budget | RM 100,000 | Team to choose |
 
 ## Simulated sensors (Person 3)
 
