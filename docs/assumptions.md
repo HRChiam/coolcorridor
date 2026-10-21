@@ -47,4 +47,16 @@ All sensor readings are **synthetic** and labelled "Simulated data" wherever sho
 | Sensor sites | 8 links: 2 exposed asphalt, 2 tree-lined, 1 covered walkway, 1 LRT entrance, 1 park, 1 shops (`data/sensor_links.csv`) | Chosen for contrast |
 | Air temperature offsets by link type | Asphalt +1.5, concrete +1.0, paver +0.8, grass verge +0.5 (proposed for S08), covered −0.5, tree-lined −1.0, park −1.5 °C | Our estimate |
 | Noise | Air ±0.3°C, humidity ±2%, surface ±1°C | Our estimate |
-| Faults | One sensor silent for 30 min, one spikes | Built in to test the app's checks |
+| Faults | S02 silent from 12:00 inclusive to 12:30 exclusive; S01 spikes at 13:05 by +8 degrees C in air and surface | Provisional Person 3 choices; configurable; not real sensor faults |
+| Random seed | 20260906, NumPy default_rng | Deterministic; CLI or JSON can override |
+| Noise distribution | Independent uniform draws within the bounds above; humidity clipped to 0-100% | Provisional choice; configurable noise amplitudes |
+| S08 offset in generated readings | +0.5 degrees C, explicit override in config/sensor_simulation.json | Provisional grass-verge value; shared sensor_links.csv unchanged |
+| Replay timing | Design-day weather interpolated linearly every 5 minutes from 07:00 through 19:00, Asia/Kuala_Lumpur | Documented data contract; batch CSV generation in this phase |
+| Surface temperature | Noisy sensor air + (1 - shade) * sunlight / 1000 * 25 * (1 - albedo) + independent noise | Documented simulator formula; shade from each reading's whole hour |
+| Fault semantics | Silence omits six rows; one spike changes both temperature fields, leaving humidity unchanged | Provisional implementation; noise drawn before faults so a no-fault run is directly comparable |
+| Precision | Three decimal places in the CSV; source is always simulated | Person 3 output convention |
+
+Person 3 settings and verification commands are described in
+[sensor_simulator.md](sensor_simulator.md). Offset overrides, noise amplitudes,
+seed and fault choices live in `config/sensor_simulation.json`; these provisional
+choices do not establish real-world calibration or fault-detection thresholds.

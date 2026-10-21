@@ -1,5 +1,7 @@
 .venv/
 __pycache__/
+.pytest_cache/
+.pytest_coolcorridor_temp/
 cache/
 data/coverage_map.html
 data/tagging_map.html
