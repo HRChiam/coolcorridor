@@ -22,6 +22,11 @@ import pandas as pd
 import shapely
 from shapely.affinity import translate
 
+try:
+    from .effective import design_weather
+except ImportError:
+    from effective import design_weather
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 
@@ -54,8 +59,7 @@ def main():
     start = time.time()
     links = gpd.read_file(DATA / "links.geojson")
     buildings = gpd.read_file(DATA / "buildings.geojson")
-    weather = pd.read_csv(DATA / "weather.csv")
-    design = weather[weather.day == "design"].set_index("hour")
+    design = design_weather(DATA)
 
     utm = links.estimate_utm_crs()
     lines = links.to_crs(utm).geometry.values

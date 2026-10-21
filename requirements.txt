@@ -1,0 +1,2 @@
+# Community Cloud discovers this standard filename. Keep the reviewed pins.
+-r requirements-person3-lock.txt

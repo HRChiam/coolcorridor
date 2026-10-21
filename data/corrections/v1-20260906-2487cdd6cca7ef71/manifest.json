@@ -1,0 +1,96 @@
+{
+  "baseline_fallback_hours": [],
+  "design_date": "2026-09-06",
+  "generated_at_utc": "2026-10-21T08:54:12.949704+00:00",
+  "heat_units": "Celsius-labelled modelled heat index",
+  "hours": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "ignored_outside_design_window": 0,
+  "implementation": {
+    "effective.py": "b748dac30cee67e9bd7e8b22cc0e9367f29d76a9f9bec611dc1b93e4ddbcc581",
+    "heat.py": "c2063b4561ee1fde03730eab379c0a085df174746be6369bca05c8d45c13d078",
+    "sensor_correction.py": "2bb40ff312daf5c9755fdf404052743ad5c3de9eda98ff880b9fa1b2841d17f6"
+  },
+  "inputs": {
+    "../config/sensor_simulation.json": {
+      "sha256": "71746dd16ef0a40033e56b85d290c777239a98faa6866dfe8f14b7c754d00a07"
+    },
+    "links.geojson": {
+      "sha256": "e4f3251ce02b4ff835815be9bd126e07bc868a30f0dcf465f8618556083e2d8f"
+    },
+    "sensor_links.csv": {
+      "sha256": "27033510ad9f071f867d0c05b890e946ceb358194e134890857c976829b8b5a7"
+    },
+    "sensors_stream.csv": {
+      "sha256": "bdf932b11b4d93ba598a2853577a709e195f9e833f5f26cdbc7e8aa46cf83943"
+    },
+    "weather.csv": {
+      "design_rows_sha256": "937b831f87d089aa3dc1d23ab169e4dfc3941675d6fa54f1407aa47fce485314",
+      "sha256": "4bcdf29d1b2df8ee0d5869251980b86c84bf5497953384a729e6f9d60533bd65"
+    }
+  },
+  "link_count": 1491,
+  "output_version": "v1-20260906-2487cdd6cca7ef71",
+  "outputs": {
+    "corrected_heat.csv": "966fc035e799e5f1383ca73536dfb049430642527f65af067855c3ce72ef2242",
+    "rejected_samples.csv": "a00cc4b744ed13da3abb3d311bc531a122bc23c7bc6b446c7f8417c55e87d0dc",
+    "sensor_offsets.csv": "1d066f3273127629952a54a974d6b180d872047b83cd154b4d3591e3daa856fb",
+    "sensor_validation.csv": "cca210fcff6afbf3ab29b76947fe611bf580eeedfacd314c4323ce5a0f64b927"
+  },
+  "parameters": {
+    "aggregation": "median, minimum one accepted sample per sensor-hour",
+    "anomaly_baseline": "previous30min air-minus-interpolated-weather median, minimum3 readings",
+    "anomaly_threshold_c": 3.0,
+    "distance": "target link geometry to sensor link midpoint in local UTM",
+    "heat_rounding_decimals": 2,
+    "hour_window": "[hour-30min,hour+30min), Asia/Kuala_Lumpur",
+    "no_sensor_hour": "zero correction; explicitly labelled baseline fallback",
+    "outlier_policy": "existing dashboard causal residual departure detector",
+    "radius_m": 150,
+    "spatial_weight": "max(0,1-distance_m/150); nearest available sensor only",
+    "validation": "previous-hour correction against current-hour median air offset"
+  },
+  "reading_count_design_window": 1154,
+  "rejected_anomaly_samples": 1,
+  "row_count": 19383,
+  "schema_version": 1,
+  "sensor_count": 8,
+  "sensor_hours_per_hour": {
+    "10": 8,
+    "11": 8,
+    "12": 8,
+    "13": 8,
+    "14": 8,
+    "15": 8,
+    "16": 8,
+    "17": 8,
+    "18": 8,
+    "19": 8,
+    "7": 8,
+    "8": 8,
+    "9": 8
+  },
+  "sensor_source": "simulated",
+  "simulation_seed": 20260906,
+  "timezone": "Asia/Kuala_Lumpur",
+  "validation": {
+    "limitation": "Synthetic demonstration, not real-world accuracy; adjacent centred windows are disjoint",
+    "mean_absolute_error_after_c": 0.1626145833333308,
+    "mean_absolute_error_before_c": 1.061822916666667,
+    "method": "previous-hour calibration versus next-hour median simulated air offset",
+    "sensor_hours": 96
+  }
+}

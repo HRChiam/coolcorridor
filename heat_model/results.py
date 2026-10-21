@@ -17,8 +17,12 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from heat import COMFORT_C, HOURS
-from tag_links import household_use
+try:
+    from .heat import COMFORT_C, HOURS
+    from .effective import load_effective_links
+except ImportError:
+    from heat import COMFORT_C, HOURS
+    from effective import load_effective_links
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -46,6 +50,10 @@ def shade_after_fixes(links, fixes, interventions, hour=HOUR):
 
 
 def hottest_links(links):
+    try:
+        from .tag_links import household_use
+    except ImportError:
+        from tag_links import household_use
     """Top 10 walked links at 1pm; heat ties are broken by household walking distance."""
     heat = pd.DataFrame({h: best_heat(links, h) for h in HOURS})
     links = links.assign(heat_1pm=heat[HOUR], minutes_above_comfort=(heat > COMFORT_C).sum(axis=1) * 60)
@@ -60,7 +68,7 @@ def hottest_links(links):
 
 
 def main():
-    links = gpd.read_file(DATA / "links.geojson")
+    links = load_effective_links(DATA)
     corrected = f"heat_corr_h{HOUR}" in links
     print("=== Person 1 results ===")
 
@@ -90,7 +98,13 @@ def main():
               f"model error vs simulated sensors {all_.error_before:.2f} °C before correction, "
               f"{all_.error_after:.2f} °C after")
     else:
-        print("\n3. Pipeline check: waiting for Person 3's data/sensors_stream.csv")
+        import json
+        version = links.attrs.get("correction_version")
+        if version:
+            manifest = json.loads((DATA / "corrections" / version / "manifest.json").read_text(encoding="utf-8"))
+            print("\n3. Synthetic pipeline check (not field validation):", manifest["validation"])
+        else:
+            print("\n3. Pipeline check: no activated validated correction bundle")
 
 
 if __name__ == "__main__":

@@ -21,6 +21,9 @@ import math
 import os
 import warnings
 from collections import defaultdict
+from functools import lru_cache
+from decimal import Decimal, InvalidOperation
+import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +33,9 @@ import numpy as np
 import pandas as pd
 from pyproj import Geod
 from shapely.geometry import LineString, MultiLineString, Point, mapping
+from shapely.ops import linemerge
+
+from heat_model.effective import load_effective_links, design_weather, input_signature
 
 DATA_DIR = Path(os.environ.get("COOLCORRIDOR_DATA_DIR", Path(__file__).resolve().parent / "data"))
 COMFORT_C = 32.0  # Assumption from team build plan
@@ -53,6 +59,7 @@ TRIPS_PER_HOUSEHOLD = {"transit": 0.9, "shop": 0.45, "park": 0.15, "community": 
 HOURLY_TRIP_WEIGHTS = (0.13, 0.12, 0.07, 0.05, 0.05, 0.06, 0.06,
                        0.07, 0.08, 0.10, 0.09, 0.07, 0.05)
 SOURCE_NOTE = "modelled; prices, trip rates and comfort limit are assumptions"
+SHADE_GAIN_RULE = "proportional_remaining_sunlight"
 GEOD = Geod(ellps="WGS84")
 SENSOR_COLUMNS = ["sensor_id", "link_id", "timestamp", "air_temp_c", "rh_pct", "surface_temp_c", "source"]
 PRIORITY_COLUMNS = ["rank", "link_id", "fix", "cost_rm", "upkeep_rm_per_year", "cost_10y_rm", "heat_drop",
@@ -69,7 +76,7 @@ def _read_links() -> gpd.GeoDataFrame:
     path = DATA_DIR / "links.geojson"
     if not path.is_file():
         raise FileNotFoundError(f"Person 1's {path} is missing. Run heat_model/run_all.py first.")
-    links = gpd.read_file(path)
+    links = load_effective_links(DATA_DIR)
     if links.empty:
         raise ValueError(f"{path} contains no walking links")
     if links.crs is None:
@@ -134,10 +141,15 @@ def _shade(row: pd.Series, hour: int) -> float:
 
 
 def _heat(row: pd.Series, hour: int) -> float:
-    # Sensor-corrected heat (Person 1's heat_corr_hNN) when it exists, else the model's
-    for key in (f"heat_corr_h{hour:02d}", f"heat_h{hour:02d}", f"heat_h{hour}"):
+    # The shared loader validates a correction bundle as a whole before merging.
+    # Never silently fall back for an invalid corrected row.
+    for key in (f"heat_corr_h{hour:02d}", f"heat_corr_h{hour}",
+                f"heat_h{hour:02d}", f"heat_h{hour}"):
         if key in row and pd.notna(row[key]):
-            return float(row[key])
+            value = float(row[key])
+            if not math.isfinite(value):
+                raise ValueError(f"Nonfinite heat for link {row.get('link_id')} at {hour}:00")
+            return value
     raise ValueError(f"Missing Person 1's heat_h{hour:02d} in links.geojson; run heat model before routing")
 
 
@@ -156,11 +168,29 @@ def heat_at(hour: int) -> gpd.GeoDataFrame:
     if key is None:
         raise ValueError(f"Person 1 must first produce heat_h{hour:02d} in data/links.geojson")
     links["heat_model"] = pd.to_numeric(links[key], errors="raise")
-    corrected = _hour_col(links, "heat_corr", hour)
-    links["heat_score"] = pd.to_numeric(links[corrected], errors="raise") if corrected else links["heat_model"]
+    links["heat_score"] = links.apply(lambda row: _heat(row, hour), axis=1)
+    links["heat"] = links["heat_score"]
     links["shade"] = links.apply(lambda r: _shade(r, hour), axis=1)
     links["hour"] = hour
+    metadata = _heat_metadata(links, hour)
+    for name, value in metadata.items():
+        links[name] = value
+    links.attrs.update(metadata, sensor_corrected=metadata["heat_source"] == "corrected")
     return links
+
+
+def _heat_metadata(links: gpd.GeoDataFrame, hour: int | None = None) -> dict:
+    """Public source labels, carried by every consumer of the same heat bundle."""
+    corrected = any(str(c).startswith("heat_corr_h") for c in links)
+    source = links.attrs.get("heat_source", "corrected" if corrected else "baseline")
+    if hour is not None and links.attrs.get("correction_version") is not None:
+        if links.attrs.get("sensor_hours_per_hour", {}).get(str(hour), 0) == 0:
+            source = "baseline"
+    return {"heat_source": source,
+            "sensor_source": "simulated" if source == "corrected" else None,
+            "design_date": links.attrs.get("design_date"),
+            "correction_version": links.attrs.get("correction_version")}
+
 
 
 def latest_sensors() -> pd.DataFrame:
@@ -179,36 +209,86 @@ def latest_sensors() -> pd.DataFrame:
 
 
 def _validate_hour(hour: int) -> int:
-    if isinstance(hour, bool) or int(hour) not in HOURS:
+    if isinstance(hour, bool):
+        raise ValueError("Hour must be 7..19 (24-hour clock)")
+    try:
+        valid = math.isfinite(float(hour)) and float(hour) == int(hour) and int(hour) in HOURS
+    except (TypeError, ValueError, OverflowError):
+        valid = False
+    if not valid:
         raise ValueError("Hour must be 7..19 (24-hour clock)")
     return int(hour)
 
 
 def _endpoints(geom: Any) -> tuple[tuple[float, float], tuple[float, float]]:
+    if geom is None or geom.is_empty:
+        raise ValueError("Walking link geometry is missing or empty")
+    if isinstance(geom, MultiLineString):
+        geom = linemerge(geom)
     if isinstance(geom, LineString):
         coords = list(geom.coords)
         return (tuple(coords[0][:2]), tuple(coords[-1][:2]))
-    if isinstance(geom, MultiLineString):
-        parts = list(geom.geoms)
-        return (tuple(parts[0].coords[0][:2]), tuple(parts[-1].coords[-1][:2]))
     raise ValueError(f"Walking link geometry must be LineString/MultiLineString; got {geom.geom_type}")
+
+
+def _node_key(value: Any) -> str:
+    """Normalize integral node IDs without creating a float precision dependency."""
+    text = str(value).strip()
+    if isinstance(value, bool) or not text or text.lower() in {"none", "nan", "<na>"}:
+        raise ValueError("Graph node ID is invalid")
+    try:
+        number = Decimal(text)
+    except InvalidOperation:
+        return f"node:{text}"
+    if not number.is_finite() or number != number.to_integral_value():
+        raise ValueError(f"Graph node ID must be integral, got {value!r}")
+    return f"node:{int(number)}"
 
 
 def _build_graph(links: gpd.GeoDataFrame, hour: int) -> nx.MultiGraph:
     graph = nx.MultiGraph()
+    graph.graph.update(_heat_metadata(links, hour))
     has_node_ids = "u" in links.columns and "v" in links.columns
+    candidates: dict[str, set[tuple[float, float]]] = {}
+    incident = []
     for _, row in links.iterrows():
         p1, p2 = _endpoints(row.geometry)
+        if not all(math.isfinite(x) for point in (p1, p2) for x in point):
+            raise ValueError("Walking coordinates must be finite EPSG:4326 longitude/latitude")
+        if any(not (-180 <= p[0] <= 180 and -90 <= p[1] <= 90) for p in (p1, p2)):
+            raise ValueError("Walking coordinates must be EPSG:4326 longitude/latitude")
         if has_node_ids and pd.notna(row["u"]) and pd.notna(row["v"]):
-            u, v = f"node:{row['u']}", f"node:{row['v']}"
+            u, v = _node_key(row["u"]), _node_key(row["v"])
+            ends = {p1, p2}
+            for node in (u, v):
+                candidates[node] = candidates[node] & ends if node in candidates else ends.copy()
+            incident.append((u, v))
         else:
             u, v = f"coord:{p1[0]:.6f},{p1[1]:.6f}", f"coord:{p2[0]:.6f},{p2[1]:.6f}"
-        graph.add_node(u, xy=p1)
-        graph.add_node(v, xy=p2)
+            for node, point in ((u, p1), (v, p2)):
+                candidates[node] = candidates[node] & {point} if node in candidates else {point}
         graph.add_edge(u, v, key=str(row["link_id"]), link_id=str(row["link_id"]),
                        length_m=float(row["length_m"]), heat_c=_heat(row, hour),
-                       shade=_shade(row, hour), unsafe=_truthy(row.get("unsafe", False)),
-                       geometry=row.geometry)
+                       shade=_shade(row, hour), unsafe=_truthy(row.get("unsafe", False)), geometry=row.geometry)
+    if any(not values for values in candidates.values()):
+        raise ValueError("Walking junction endpoints contradict supplied u/v topology")
+    # Geometry order in an undirected export need not match u/v. Intersections
+    # identify junctions shared by incident lines; known neighbors resolve leaves.
+    changed = True
+    while changed:
+        changed = False
+        for u, v in incident:
+            if u == v:
+                continue
+            for known, other in ((u, v), (v, u)):
+                if len(candidates[known]) == 1 and len(candidates[other]) > 1:
+                    remaining = candidates[other] - candidates[known]
+                    if remaining != candidates[other]:
+                        candidates[other] = remaining
+                        changed = True
+    for node, values in candidates.items():
+        graph.nodes[node]["xy"] = next(iter(values)) if len(values) == 1 else None
+    graph.graph["unresolved_coordinate_nodes"] = tuple(n for n, c in candidates.items() if len(c) != 1)
     return graph
 
 
@@ -246,6 +326,10 @@ def _haversine_m(a: tuple[float, float], b: tuple[float, float]) -> float:
 
 
 def _snap(graph: nx.MultiGraph, geom: Point) -> str:
+    if not graph or graph.graph.get("unresolved_coordinate_nodes"):
+        raise ValueError("Cannot reliably snap coordinates: junction geometry is ambiguous; provide a valid place.node_id")
+    if geom is None or geom.is_empty:
+        raise ValueError("Place needs a valid geometry when node_id is absent")
     if not isinstance(geom, Point):
         geom = geom.centroid
     xy = (float(geom.x), float(geom.y))
@@ -254,15 +338,21 @@ def _snap(graph: nx.MultiGraph, geom: Point) -> str:
 
 def _resolve_node(graph: nx.MultiGraph, places: gpd.GeoDataFrame, place_id: Any) -> str:
     place_id = str(place_id)
-    if place_id in graph:
-        return place_id
-    prefixed = f"node:{place_id}"
-    if prefixed in graph:
-        return prefixed
     matching = places.loc[places.place_id == place_id]
     if matching.empty:
+        if place_id in graph:
+            return place_id
+        prefixed = _node_key(place_id)
+        if prefixed in graph:
+            return prefixed
         raise ValueError(f"Place {place_id!r} not found in places.geojson")
-    return _snap(graph, matching.geometry.iloc[0])
+    place = matching.iloc[0]
+    if "node_id" in place and pd.notna(place["node_id"]):
+        node = _node_key(place["node_id"])
+        if node not in graph:
+            raise ValueError(f"Place {place_id!r} node_id {place['node_id']!r} is absent from walking graph")
+        return node
+    return _snap(graph, place.geometry)
 
 
 def _degree_minutes(edge: dict[str, Any]) -> float:
@@ -272,7 +362,7 @@ def _degree_minutes(edge: dict[str, Any]) -> float:
 
 def _edge_cost(edge: dict[str, Any], penalty: float, unsafe_factor: float | None) -> float | None:
     """length + penalty x heat exposure; unsafe links are skipped (None) unless a factor is given."""
-    cost = edge["length_m"] + penalty * _degree_minutes(edge)
+    cost = edge["length_m"] if penalty == 0 else edge["length_m"] + penalty * _degree_minutes(edge)
     if edge.get("unsafe"):
         return None if unsafe_factor is None else cost * unsafe_factor
     return cost
@@ -363,8 +453,12 @@ def _route_in_graph(graph: nx.MultiGraph, src: str, dst: str, mode: str,
         "warning": ("No route avoids unsafe roads; this one uses a road without a known footpath"
                     if uses_unsafe else None),
         "shortest": {k: v for k, v in short.items() if k != "geometry"},
-        "heat_units": f"degree-C-minutes above {COMFORT_C:g}C comfort threshold (assumed)",
-        "data_label": "Person 1 heat model; corrections may use simulated sensors",
+        "heat_units": "degree-C-minutes above 32C comfort threshold (assumed)",
+        "data_label": ("Modelled heat index; offline correction using SIMULATED sensors"
+                       if graph.graph.get("heat_source") == "corrected" else
+                       "Modelled heat index; uncorrected baseline (no sensor correction)"),
+        **{name: graph.graph.get(name) for name in
+           ("heat_source", "sensor_source", "design_date", "correction_version")},
     })
     return output
 
@@ -380,8 +474,7 @@ def route(origin_id: Any, dest_id: Any, hour: int, mode: str = "coolest") -> dic
     hour = _validate_hour(hour)
     if mode not in ROUTE_MODES:
         raise ValueError(f"mode must be one of {', '.join(repr(m) for m in ROUTE_MODES)}")
-    links = heat_at(hour)
-    graph = _build_graph(links, hour)
+    graph = _cached_graph(_cache_key(), hour)
     places = _read_places()
     src = _resolve_node(graph, places, origin_id)
     dst = _resolve_node(graph, places, dest_id)
@@ -405,7 +498,7 @@ def _category(kind: Any) -> str:
     return kind
 
 
-def walking_demand() -> pd.DataFrame:
+def _compute_walking_demand() -> pd.DataFrame:
     """Assign assumed home-to-destination trips along SHORTEST routes.
 
     Output one row per link with flow_h07...flow_h19 and flow_day.
@@ -425,7 +518,7 @@ def walking_demand() -> pd.DataFrame:
         if pd.isna(households):
             households = 1
         households = max(0.0, float(households))
-        home_node = _snap(graph, home.geometry)
+        home_node = _resolve_node(graph, places, home.place_id)
         for category, daily_trips in TRIPS_PER_HOUSEHOLD.items():
             candidates = places.loc[places.category == category]
             if candidates.empty:
@@ -434,7 +527,7 @@ def walking_demand() -> pd.DataFrame:
             best_path: list[dict] | None = None
             best_m = float("inf")
             for _, destination in candidates.iterrows():
-                dest_node = _snap(graph, destination.geometry)
+                dest_node = _resolve_node(graph, places, destination.place_id)
                 if home_node == dest_node:
                     continue
                 try:
@@ -458,37 +551,45 @@ def walking_demand() -> pd.DataFrame:
     return pd.DataFrame(records)
 
 
+def _cache_key() -> tuple:
+    """Content-addressed inputs and assumptions; no timestamps-only stale cache."""
+    directory = Path(DATA_DIR).resolve()
+    extra = tuple((name, hashlib.sha256((directory / name).read_bytes()).hexdigest())
+                  for name in ("places.geojson", "interventions.csv") if (directory / name).is_file())
+    assumptions = (COMFORT_C, WALKING_METRES_PER_MIN, MAX_COOLER_DETOUR, MAX_BALANCED_DETOUR, UNSAFE_COST_FACTOR,
+                   BUDGET_STEP_RM, MAX_BUDGET_STEPS, DEFAULT_HORIZON_YEARS, WEEKS_PER_YEAR, LAMBDA_VALUES,
+                   tuple(HOURS), HEAT_A, HEAT_B, HEAT_C, SHADE_GAIN_RULE,
+                   tuple(sorted(TRIPS_PER_HOUSEHOLD.items())), tuple(HOURLY_TRIP_WEIGHTS))
+    return (str(directory), hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), input_signature(directory), extra, assumptions)
+
+
+@lru_cache(maxsize=32)
+def _cached_graph(key: tuple, hour: int) -> nx.MultiGraph:
+    return nx.freeze(_build_graph(_read_links(), hour))
+
+
+@lru_cache(maxsize=4)
+def _cached_demand(key: tuple) -> pd.DataFrame:
+    return _compute_walking_demand()
+
+
+def walking_demand(*, use_cache: bool = True) -> pd.DataFrame:
+    """Budget-independent assumed walking flows; returned tables are copies.
+
+    ``use_cache=False`` is the reproducible reference calculation for benchmarks
+    and equivalence checks. Both paths use the repaired authoritative resolver.
+    """
+    result = _cached_demand(_cache_key()) if use_cache else _compute_walking_demand()
+    return result.copy(deep=True)
+
+
 def _weather_radiation() -> dict[int, float]:
-    """Read measured Open-Meteo radiation; no silently invented planning benefit."""
+    """One matching design-date radiation record per hour; never forecast means."""
     path = DATA_DIR / "weather.csv"
     if not path.is_file():
         raise FileNotFoundError(f"{path} missing: interventions need hourly solar radiation")
-    weather = pd.read_csv(path)
-    radiance = next((c for c in (
-        "sw_wm2","shortwave_radiation", "shortwave_radiation_wm2", "shortwave_radiation_w_m2",
-        "shortwave_radiation_w_m2", "solar_radiation", "radiation_wm2", "sunlight_wm2",
-        "shortwave", "R_wm2", "R") if c in weather.columns), None)
-    if radiance is None:
-        raise ValueError("weather.csv needs shortwave_radiation (W/m2) for intervention estimates")
-    hour_col = next((c for c in ("hour", "hour_local") if c in weather.columns), None)
-    if hour_col:
-        hours = pd.to_numeric(weather[hour_col], errors="coerce")
-    else:
-        time_col = next((c for c in ("time", "timestamp", "datetime", "date") if c in weather.columns), None)
-        if time_col is None:
-            raise ValueError("weather.csv needs 'hour' or a timestamp column")
-        hours = pd.to_datetime(weather[time_col], errors="coerce").dt.hour
-    weather = weather.copy()
-    weather["_hour"] = hours
-    weather["_solar"] = pd.to_numeric(weather[radiance], errors="coerce")
-    filtered = weather.dropna(subset=["_hour", "_solar"])
-    mapping_by_hour = filtered.groupby("_hour")["_solar"].mean().to_dict()
-    absent = [h for h in HOURS if h not in mapping_by_hour]
-    if absent:
-        raise ValueError(f"weather.csv has no solar radiation data for these hours: {absent}")
-    if (filtered["_solar"] < 0).any():
-        raise ValueError("Radiation cannot be negative")
-    return {h: float(mapping_by_hour[h]) for h in HOURS}
+    selected = design_weather(DATA_DIR)
+    return {hour: float(selected.loc[hour, "sw_wm2"]) for hour in HOURS}
 
 
 def _read_fixes() -> pd.DataFrame:
@@ -504,9 +605,13 @@ def _read_fixes() -> pd.DataFrame:
         raise ValueError("Fix names must be unique")
     for c in ("cost_rm_per_m", "shade_gain", "albedo_gain", "weeks_to_effect", "maintenance_rm_per_year"):
         fixes[c] = pd.to_numeric(fixes[c], errors="raise")
-    fixes["quick_win"] = fixes["quick_win"].map(_truthy)
+        if not all(math.isfinite(float(v)) for v in fixes[c]):
+            raise ValueError(f"Intervention {c} must be finite")
     if (fixes.cost_rm_per_m <= 0).any() or (fixes[["shade_gain", "albedo_gain"]] < 0).any().any():
         raise ValueError("Intervention cost must be positive and gains nonnegative")
+    if (fixes[["shade_gain", "albedo_gain"]] > 1).any().any():
+        raise ValueError("Intervention shade/albedo gains must be fractions in 0..1")
+    fixes["quick_win"] = fixes["quick_win"].map(_truthy)
     if (fixes[["weeks_to_effect", "maintenance_rm_per_year"]] < 0).any().any():
         raise ValueError("weeks_to_effect and maintenance_rm_per_year must be nonnegative")
     return fixes
@@ -520,9 +625,9 @@ def _calculate_fix(row: pd.Series, fix: pd.Series, radiation: dict[int, float]) 
     original_shade, new_shade = {}, {}
     for hour in HOURS:
         s0 = _shade(row, hour)
-        # The fix blocks a share shade_gain of the sun still reaching the link, the
-        # same way Person 1's shade model adds trees on top of building shadow
-        s1 = s0 + (1.0 - s0) * float(fix["shade_gain"])
+        # User-approved proportional gain: reduce the remaining sunlit fraction.
+        # CSV fractions and prices are unchanged; do not add this to total shade.
+        s1 = min(1.0, s0 + (1.0 - s0) * float(fix["shade_gain"]))
         # Covered walkway should provide full shade, even if shade_gain < 1.
         if str(fix["fix"]) == "covered_walkway":
             s1 = 1.0
@@ -596,6 +701,9 @@ def apply_fix(link_ids: Any, fix: str) -> dict:
         result["area_before"] = round(total_before, 3)
         result["area_after"] = round(max(0.0, total_before - benefit), 3)
         result["area_units"] = units
+        result.update(_heat_metadata(links))
+        result.update(heat_drop_hour=13, heat_drop_units="Celsius-labelled heat-index reduction",
+                      benefit_units=units, shade_gain_rule=SHADE_GAIN_RULE)
         del result["_baseline_heat"]
         del result["_new_heat"]
         results.append(result)
@@ -610,7 +718,7 @@ def apply_fix(link_ids: Any, fix: str) -> dict:
             "weeks_to_effect": results[0]["weeks_to_effect"], "quick_win": results[0]["quick_win"],
             "maintenance_rm_per_year": round(sum(r["maintenance_rm_per_year"] for r in results), 2),
             "area_before": round(total_before, 3), "area_after": round(max(0.0, total_before - saved), 3),
-            "area_units": units, "data_label": SOURCE_NOTE}
+            "area_units": units, "data_label": SOURCE_NOTE, **_heat_metadata(links)}
 
 
 def _total_heat_exposure(links: gpd.GeoDataFrame, flow: pd.DataFrame) -> float:
@@ -715,22 +823,45 @@ def _fix_options(links: gpd.GeoDataFrame, flow: pd.DataFrame, fixes: pd.DataFram
     return options
 
 
-def fix_options(horizon_years: float = DEFAULT_HORIZON_YEARS, upkeep_scale: float = 1.0) -> pd.DataFrame:
-    """All candidate fixes (one row per link and fix) with benefit and costs.
+def _compute_planning_candidates(*, use_cache=True, horizon_years=DEFAULT_HORIZON_YEARS, upkeep_scale=1.0):
+    links = _read_links()
+    flow = walking_demand(use_cache=use_cache).set_index("link_id")
+    options = _fix_options(links, flow, _read_fixes(), horizon_years, upkeep_scale)
+    return options, _total_heat_exposure(links, flow), _heat_metadata(links)
 
-    upkeep_scale multiplies the assumed upkeep, for sensitivity checks; value_10y
-    is benefit over the horizon per RM of 10-year total cost (build + 10 x upkeep).
-    """
+
+@lru_cache(maxsize=8)
+def _cached_planning_candidates(key, horizon_years, upkeep_scale):
+    return _compute_planning_candidates(use_cache=True, horizon_years=horizon_years, upkeep_scale=upkeep_scale)
+
+
+def _planning_candidates(*, use_cache=True, horizon_years=DEFAULT_HORIZON_YEARS, upkeep_scale=1.0):
+    import copy
+    value = (_cached_planning_candidates(_cache_key(), horizon_years, upkeep_scale) if use_cache else
+             _compute_planning_candidates(use_cache=False, horizon_years=horizon_years, upkeep_scale=upkeep_scale))
+    return copy.deepcopy(value)
+
+
+def clear_caches():
+    _cached_graph.cache_clear()
+    _cached_demand.cache_clear()
+    _cached_planning_candidates.cache_clear()
+
+
+def fix_options(horizon_years=DEFAULT_HORIZON_YEARS, upkeep_scale=1.0):
     horizon_years = _check_horizon(horizon_years)
-    options = pd.DataFrame(_fix_options(_read_links(), walking_demand().set_index("link_id"),
-                                        _read_fixes(), horizon_years, upkeep_scale))
-    if not options.empty:
-        options["value_10y"] = options["benefit_over_horizon"] / options["cost_10y_rm"]
-    return options
+    upkeep_scale = float(upkeep_scale)
+    if not math.isfinite(upkeep_scale) or upkeep_scale < 0:
+        raise ValueError("upkeep_scale must be finite and nonnegative")
+    options, _, _ = _planning_candidates(horizon_years=horizon_years, upkeep_scale=upkeep_scale)
+    frame = pd.DataFrame(options)
+    if not frame.empty:
+        frame["value_10y"] = frame.benefit_over_horizon / frame.cost_10y_rm
+    return frame
 
 
 def priorities(budget_rm: float, quick_wins_only: bool = False,
-               horizon_years: float = DEFAULT_HORIZON_YEARS) -> pd.DataFrame:
+               horizon_years: float = DEFAULT_HORIZON_YEARS, *, use_cache: bool = True) -> pd.DataFrame:
     """Best set of interventions within the building budget, at most one per link, ranked.
 
     The budget covers building (upfront) costs only; upkeep is shown alongside,
@@ -746,16 +877,15 @@ def priorities(budget_rm: float, quick_wins_only: bool = False,
     carries weeks_to_effect and quick_win; quick_wins_only=True ranks only fixes
     that work within months, i.e. what helps this year.
     """
+    if isinstance(budget_rm, bool):
+        raise ValueError("budget_rm must be a nonnegative, finite amount")
     budget_rm = float(budget_rm)
     if not math.isfinite(budget_rm) or budget_rm < 0:
         raise ValueError("budget_rm must be a nonnegative, finite amount")
     horizon_years = _check_horizon(horizon_years)
-    links = _read_links()
-    flow = walking_demand().set_index("link_id")
-    fixes = _read_fixes()
+    proposed, area_before, metadata = _planning_candidates(use_cache=use_cache, horizon_years=horizon_years)
     if quick_wins_only:
-        fixes = fixes[fixes.quick_win]
-    proposed = _fix_options(links, flow, fixes, horizon_years)
+        proposed = [option for option in proposed if option["quick_win"]]
     picked = _best_mix(proposed, budget_rm, cost_key="cost_rm", benefit_key="benefit_over_horizon")
     picked.sort(key=lambda d: (-d["benefit_per_rm"], -d["benefit_over_horizon"], d["cost_rm"], d["link_id"]))
     selected = [{"rank": i + 1, **option} for i, option in enumerate(picked)]
@@ -768,10 +898,14 @@ def priorities(budget_rm: float, quick_wins_only: bool = False,
     answer.attrs["spent_rm"] = round(sum(o["cost_rm"] for o in picked), 2)  # building cost
     answer.attrs["upkeep_rm_per_year"] = round(sum(o["upkeep_rm_per_year"] for o in picked), 2)
     answer.attrs["cost_10y_rm"] = round(sum(o["cost_10y_rm"] for o in picked), 2)
-    answer.attrs["area_before"] = round(_total_heat_exposure(links, flow), 3)
+    answer.attrs["area_before"] = round(area_before, 3)
     # Average over the horizon: fixes still growing count for part of their effect
     answer.attrs["area_after"] = round(max(0.0, answer.attrs["area_before"] - answer["benefit_over_horizon"].sum()), 3)
     answer.attrs["data_label"] = SOURCE_NOTE
+    answer.attrs.update(metadata)
+    answer.attrs.update({"heat_drop_hour": 13, "heat_drop_units": "Celsius-labelled heat-index reduction",
+                         "benefit_units": "person-degree-C-minutes above comfort threshold per day",
+                         "shade_gain_rule": SHADE_GAIN_RULE})
     return answer
 
 
@@ -807,7 +941,7 @@ def route_summary(sample_limit: int | None = None, hour: int | None = None, mode
     graph_7am = _build_graph(links, HOURS[0])
     od_pairs = []
     for _, home in homes.iterrows():
-        home_node = _snap(graph_7am, home.geometry)
+        home_node = _resolve_node(graph_7am, places, home.place_id)
         households = pd.to_numeric(home.get("households", 1), errors="coerce")
         if pd.isna(households):
             households = 1
@@ -816,7 +950,7 @@ def route_summary(sample_limit: int | None = None, hour: int | None = None, mode
             best_dest = None
             shortest_dist = float("inf")
             for _, dest in candidates.iterrows():
-                dest_node = _snap(graph_7am, dest.geometry)
+                dest_node = _resolve_node(graph_7am, places, dest.place_id)
                 if dest_node == home_node:
                     continue
                 try:
@@ -873,6 +1007,7 @@ def route_summary(sample_limit: int | None = None, hour: int | None = None, mode
         "evaluated_home_destination_pairs": len(od_pairs),
         "hour": hour if hour is not None else "07:00-19:00 demand-weighted",
         "data_label": SOURCE_NOTE,
+        **_heat_metadata(links),
     }
 
 

@@ -1,0 +1,2 @@
+sensor_id,link_id,timestamp,air_temp_c,rh_pct,surface_temp_c,source,weather_air_c,departure_c,anomaly,hour
+S01,L1448,2026-09-06 13:05:00+08:00,43.738,42.777,61.8,simulated,34.475,7.6825,True,13

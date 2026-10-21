@@ -1,0 +1,131 @@
+rank,link_id,hour,design_date,heat_model,heat,heat_source,sensor_source,shade,length_m,covered,canopy,surface,albedo,name,minutes_above_comfort,flow_day,walking_load_m_day
+1,L1448,7,2026-09-06,26.38,28.11,corrected,simulated,1.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+2,L0027,7,2026-09-06,26.38,28.03,corrected,simulated,1.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+3,L1476,7,2026-09-06,26.38,28.02,corrected,simulated,1.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+4,L1350,7,2026-09-06,26.38,27.98,corrected,simulated,1.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+5,L0028,7,2026-09-06,26.38,27.93,corrected,simulated,1.0,29.6,False,0.286,concrete,0.3,Jalan Putra Setia 6/1,660,8.85,261.96
+6,L1482,7,2026-09-06,26.38,27.89,corrected,simulated,1.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+7,L0026,7,2026-09-06,26.38,27.86,corrected,simulated,1.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+8,L0789,7,2026-09-06,26.38,27.86,corrected,simulated,1.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+9,L0034,7,2026-09-06,26.38,27.86,corrected,simulated,1.0,26.9,False,0.286,concrete,0.3,Jalan Putra Setia 6/1,600,0.0,0.0
+10,L0036,7,2026-09-06,26.38,27.84,corrected,simulated,1.0,28.6,False,0.286,concrete,0.3,Jalan Putra Setia 6/1,600,8.85,253.11
+1,L0027,8,2026-09-06,28.09,29.57,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+2,L1448,8,2026-09-06,28.09,29.51,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+3,L1350,8,2026-09-06,28.09,29.4,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+4,L0026,8,2026-09-06,28.04,29.37,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+5,L1476,8,2026-09-06,28.02,29.36,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+6,L0789,8,2026-09-06,28.02,29.35,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+7,L1482,8,2026-09-06,28.02,29.26,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+8,L0028,8,2026-09-06,27.8,29.2,corrected,simulated,0.229,29.6,False,0.286,concrete,0.3,Jalan Putra Setia 6/1,660,8.85,261.96
+9,L1067,8,2026-09-06,27.85,29.17,corrected,simulated,0.194,54.8,False,0.243,paver,0.25,,600,0.0,0.0
+10,L0034,8,2026-09-06,27.8,29.13,corrected,simulated,0.229,26.9,False,0.286,concrete,0.3,Jalan Putra Setia 6/1,600,0.0,0.0
+1,L1448,9,2026-09-06,32.16,33.64,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+2,L0027,9,2026-09-06,32.16,33.53,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+3,L1350,9,2026-09-06,32.16,33.53,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+4,L1476,9,2026-09-06,31.93,33.33,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+5,L0026,9,2026-09-06,31.99,33.23,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+6,L1482,9,2026-09-06,31.93,33.22,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+7,L0789,9,2026-09-06,31.93,33.16,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+8,L1486,9,2026-09-06,32.16,33.08,corrected,simulated,0.0,249.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+9,L1274,9,2026-09-06,31.93,33.05,corrected,simulated,0.0,50.8,False,0.0,concrete,0.3,,600,0.0,0.0
+10,L1445,9,2026-09-06,32.16,33.0,corrected,simulated,0.0,15.0,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+1,L0027,10,2026-09-06,36.94,38.32,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+2,L1448,10,2026-09-06,36.94,38.24,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+3,L1350,10,2026-09-06,36.94,38.14,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+4,L0026,10,2026-09-06,36.62,37.86,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+5,L0789,10,2026-09-06,36.52,37.76,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+6,L1476,10,2026-09-06,36.52,37.75,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+7,L1486,10,2026-09-06,36.94,37.75,corrected,simulated,0.0,249.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+8,L1445,10,2026-09-06,36.94,37.68,corrected,simulated,0.0,15.0,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+9,L1482,10,2026-09-06,36.52,37.66,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+10,L1446,10,2026-09-06,36.94,37.62,corrected,simulated,0.0,33.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+1,L0027,11,2026-09-06,40.5,41.96,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+2,L1448,11,2026-09-06,40.5,41.91,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+3,L1350,11,2026-09-06,40.5,41.81,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+4,L0026,11,2026-09-06,40.07,41.39,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+5,L1486,11,2026-09-06,40.5,41.38,corrected,simulated,0.0,249.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+6,L1445,11,2026-09-06,40.5,41.3,corrected,simulated,0.0,15.0,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+7,L1476,11,2026-09-06,39.92,41.26,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+8,L0789,11,2026-09-06,39.92,41.24,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+9,L1446,11,2026-09-06,40.5,41.24,corrected,simulated,0.0,33.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+10,L1482,11,2026-09-06,39.92,41.16,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+1,L1448,12,2026-09-06,42.39,43.83,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+2,L1350,12,2026-09-06,42.39,43.73,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+3,L0027,12,2026-09-06,42.39,43.56,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+4,L1486,12,2026-09-06,42.39,43.29,corrected,simulated,0.0,249.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+5,L1445,12,2026-09-06,42.39,43.21,corrected,simulated,0.0,15.0,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+6,L1446,12,2026-09-06,42.39,43.15,corrected,simulated,0.0,33.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+7,L1476,12,2026-09-06,41.73,43.1,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+8,L1482,12,2026-09-06,41.73,42.99,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+9,L0026,12,2026-09-06,41.9,42.95,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+10,L1274,12,2026-09-06,41.73,42.8,corrected,simulated,0.0,50.8,False,0.0,concrete,0.3,,600,0.0,0.0
+1,L0027,13,2026-09-06,42.78,44.39,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+2,L1448,13,2026-09-06,42.78,44.33,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+3,L1350,13,2026-09-06,42.78,44.21,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+4,L1486,13,2026-09-06,42.78,43.74,corrected,simulated,0.0,249.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+5,L0026,13,2026-09-06,42.28,43.73,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+6,L1445,13,2026-09-06,42.78,43.66,corrected,simulated,0.0,15.0,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+7,L1446,13,2026-09-06,42.78,43.59,corrected,simulated,0.0,33.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+8,L1476,13,2026-09-06,42.11,43.58,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+9,L0789,13,2026-09-06,42.11,43.55,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+10,L1482,13,2026-09-06,42.11,43.46,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+1,L0027,14,2026-09-06,43.08,44.29,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+2,L1448,14,2026-09-06,43.08,44.29,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+3,L1350,14,2026-09-06,43.08,44.2,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+4,L1486,14,2026-09-06,43.08,43.83,corrected,simulated,0.0,249.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+5,L1445,14,2026-09-06,43.08,43.77,corrected,simulated,0.0,15.0,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+6,L1446,14,2026-09-06,43.08,43.71,corrected,simulated,0.0,33.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+7,L0026,14,2026-09-06,42.6,43.69,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+8,L1476,14,2026-09-06,42.44,43.59,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+9,L0789,14,2026-09-06,42.44,43.52,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+10,L1482,14,2026-09-06,42.44,43.5,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+1,L0027,15,2026-09-06,42.03,43.59,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+2,L1448,15,2026-09-06,42.03,43.55,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+3,L1350,15,2026-09-06,42.03,43.44,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+4,L0026,15,2026-09-06,41.57,42.98,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+5,L1486,15,2026-09-06,42.03,42.97,corrected,simulated,0.0,249.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+6,L1445,15,2026-09-06,42.03,42.89,corrected,simulated,0.0,15.0,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+7,L1476,15,2026-09-06,41.42,42.86,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+8,L0789,15,2026-09-06,41.42,42.83,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+9,L1446,15,2026-09-06,42.03,42.83,corrected,simulated,0.0,33.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+10,L1482,15,2026-09-06,41.42,42.75,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+1,L1448,16,2026-09-06,39.4,40.94,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+2,L1350,16,2026-09-06,39.4,40.82,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+3,L0027,16,2026-09-06,39.4,40.75,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+4,L1476,16,2026-09-06,38.94,40.4,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+5,L1486,16,2026-09-06,39.4,40.35,corrected,simulated,0.0,249.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+6,L1482,16,2026-09-06,38.94,40.28,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+7,L0026,16,2026-09-06,39.05,40.27,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+8,L1445,16,2026-09-06,39.4,40.27,corrected,simulated,0.0,15.0,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+9,L1446,16,2026-09-06,39.4,40.21,corrected,simulated,0.0,33.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+10,L0789,16,2026-09-06,38.94,40.15,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+1,L1448,17,2026-09-06,37.46,38.89,corrected,simulated,0.0,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+2,L0027,17,2026-09-06,37.46,38.85,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+3,L1350,17,2026-09-06,37.46,38.79,corrected,simulated,0.0,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+4,L1476,17,2026-09-06,37.11,38.47,corrected,simulated,0.0,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+5,L0026,17,2026-09-06,37.2,38.45,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+6,L0789,17,2026-09-06,37.11,38.36,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+7,L1482,17,2026-09-06,37.11,38.36,corrected,simulated,0.0,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+8,L1446,17,2026-09-06,37.46,38.21,corrected,simulated,0.0,33.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+9,L1274,17,2026-09-06,37.11,38.14,corrected,simulated,0.0,50.8,False,0.0,concrete,0.3,,600,0.0,0.0
+10,L0777,17,2026-09-06,37.2,38.12,corrected,simulated,0.0,138.4,False,0.0,paver,0.25,Persiaran Putra Indah,600,511.85,70840.04000000001
+1,L0027,18,2026-09-06,33.87,35.31,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+2,L0026,18,2026-09-06,33.74,35.04,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+3,L0789,18,2026-09-06,33.69,34.99,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+4,L1274,18,2026-09-06,33.69,34.71,corrected,simulated,0.0,50.8,False,0.0,concrete,0.3,,600,0.0,0.0
+5,L0777,18,2026-09-06,33.74,34.69,corrected,simulated,0.0,138.4,False,0.0,paver,0.25,Persiaran Putra Indah,600,511.85,70840.04000000001
+6,L0020,18,2026-09-06,33.74,34.64,corrected,simulated,0.0,166.3,False,0.0,paver,0.25,Persiaran Putra Indah,600,85.55,14226.965
+7,L1446,18,2026-09-06,33.87,34.63,corrected,simulated,0.0,33.2,False,0.0,asphalt,0.1,Jalan Putra Indera 5,600,0.0,0.0
+8,L1171,18,2026-09-06,33.69,34.6,corrected,simulated,0.0,17.2,False,0.0,concrete,0.3,,600,0.0,0.0
+9,L1174,18,2026-09-06,33.69,34.6,corrected,simulated,0.0,85.3,False,0.0,concrete,0.3,,600,0.0,0.0
+10,L1176,18,2026-09-06,33.69,34.6,corrected,simulated,0.0,17.4,False,0.0,concrete,0.3,,600,0.0,0.0
+1,L0027,19,2026-09-06,30.43,32.2,corrected,simulated,0.0,30.6,False,0.0,asphalt,0.1,Jalan Putra Setia 6/1,660,511.85,15662.61
+2,L1448,19,2026-09-06,30.25,32.17,corrected,simulated,0.533,148.4,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+3,L1350,19,2026-09-06,30.3,32.08,corrected,simulated,0.394,160.8,False,0.0,asphalt,0.1,Jalan Putra Indera 5,660,0.0,0.0
+4,L1476,19,2026-09-06,30.24,32.06,corrected,simulated,0.514,183.3,False,0.0,concrete,0.3,,660,0.0,0.0
+5,L0026,19,2026-09-06,30.41,32.01,corrected,simulated,0.0,45.1,False,0.0,grass,0.25,Jalan Putra Setia 6/1,660,520.7,23483.570000000003
+6,L0028,19,2026-09-06,30.34,32.01,corrected,simulated,0.229,29.6,False,0.286,concrete,0.3,Jalan Putra Setia 6/1,660,8.85,261.96
+7,L0789,19,2026-09-06,30.41,32.0,corrected,simulated,0.0,40.4,False,0.0,concrete,0.3,,600,511.85,20678.74
+8,L1482,19,2026-09-06,30.31,31.99,corrected,simulated,0.312,160.0,False,0.0,concrete,0.3,,600,0.0,0.0
+9,L0034,19,2026-09-06,30.25,31.84,corrected,simulated,0.486,26.9,False,0.286,concrete,0.3,Jalan Putra Setia 6/1,600,0.0,0.0
+10,L1067,19,2026-09-06,30.23,31.8,corrected,simulated,0.561,54.8,False,0.243,paver,0.25,,600,0.0,0.0

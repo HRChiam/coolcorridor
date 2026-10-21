@@ -1,0 +1,13 @@
+{
+  "seed": 20260906,
+  "offset_overrides_c": {"S08": 0.5},
+  "air_noise_c": 0.3,
+  "rh_noise_pct": 2.0,
+  "surface_noise_c": 1.0,
+  "silent_sensor": "S02",
+  "silent_start": "12:00",
+  "silent_minutes": 30,
+  "spike_sensor": "S01",
+  "spike_time": "13:05",
+  "spike_delta_c": 8.0
+}

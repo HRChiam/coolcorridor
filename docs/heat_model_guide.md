@@ -3,7 +3,7 @@
 For Person 2 (routing and planner). This is everything from the heat model that `route()`, `priorities()` and `apply_fix()` need, and how to call it. Every snippet here has been run against the current data.
 
 > **Update, 20 Oct.** This guide was written before `engine.py` existed. Agreed since then:
-> - **`engine.heat_at` (yours) is the one `heat_at` the app uses.** It now takes the sensor-corrected `heat_corr_hNN` columns when they exist, and so do routing, fixes and area totals (through `_heat`). It also passes through the `unsafe` and `confidence` columns once Person 1 adds them. `heat_model.heat.heat_at` below still works and gives the same values; the app just doesn't need it.
+> - `engine.heat_at` and `heat_model.heat.heat_at` use the shared validated effective-heat reader. Correction columns come from the active immutable bundle, never unversioned columns embedded in the network. Routing and Planner consume the same heat. Network `unsafe` and `confidence` attributes pass through both interfaces.
 > - **Shade formula for fixes:** `s1 = s0 + (1 − s0) × shade_gain`, as in the `apply_fix` section below; it's now in `engine._calculate_fix`.
 > - **`unsafe` column is ready** (boolean, in `links.geojson` and so in `engine.heat_at`): 60 main-road links with no known footpath, with the reason in `unsafe_reason`. Every place can still reach the LRT without them, so your 10× fallback is a safety net rather than something today's data needs. `confidence` (high / medium / low) is there too.
 >
@@ -30,7 +30,7 @@ from heat_model.heat import heat_at, heat_score, design_weather, COMFORT_C, HOUR
 
 | Name | What it gives you |
 |---|---|
-| `heat_at(hour)` | GeoDataFrame, one row per walking link at that hour (7 to 19). Columns: `link_id`, `u`, `v`, `name`, `length_m`, `covered`, `canopy`, `surface`, `albedo`, `geometry`, `shade` (0 to 1), `heat_model` (°C), `heat` (°C, sensor-corrected once Person 3's sensors exist; until then equal to `heat_model`) |
+| `heat_at(hour)` | GeoDataFrame, one row per walking link at that hour (7 to 19). Columns: `link_id`, `u`, `v`, `name`, `length_m`, `covered`, `canopy`, `surface`, `albedo`, `geometry`, `shade` (0 to 1), `heat_model` (°C), `heat` (°C, effective after a validated versioned SIMULATED correction; explicitly baseline when no bundle/usable hour exists) |
 | `heat_score(air_temp_c, shade, sw_wm2, albedo, wind_ms)` | The heat formula itself. Works on numbers or whole columns. Use it in `apply_fix` to get the "after" heat. |
 | `design_weather()` | The weather of the day we model (6 Sep 2026), indexed by hour: `air_temp_c`, `sw_wm2` (sunlight), `wind_ms`, `rh_pct`, `sun_elev_deg`, `sun_azim_deg` |
 | `COMFORT_C` | The comfort line, 32°C. Import it rather than typing 32, so the heat model and your exposure always agree. |
@@ -74,7 +74,7 @@ def build_graph(hour):
 ## Walking demand and `flow_day`
 
 - Homes are `places` rows with `kind == "home"`. **Multiply trips by `households`**, don't count home places equally. The three Serasi Residences blocks have `households = 0` because the building opens in Feb 2027. They generate no trips, which is intended. Total: 855 households.
-- Write `flow_day` into `links.geojson` by `link_id`. The heat model's scripts read and rewrite that file but keep `flow_day` as you left it.
+- `engine.walking_demand()` returns fresh per-link daily/hourly flow using authoritative place IDs. The live app uses this result, not the historical embedded `flow_day`. `integration_results.py` exports a separate versioned table; embedding flow into the frozen GeoJSON is an explicit operation requiring shared-output approval.
 
 ## `apply_fix(link_ids, fix)`
 
@@ -86,29 +86,58 @@ def heat_after_fix(hour, link_ids, shade_gain=0.0, albedo_gain=0.0):
     w = design_weather().loc[hour]
     shade = g.shade + (1 - g.shade) * shade_gain
     albedo = (g.albedo + albedo_gain).clip(upper=1)
-    after = heat_score(w.air_temp_c, shade, w.sw_wm2, albedo, w.wind_ms)
-    return after + (g.heat - g.heat_model)  # keeps the sensor correction
+    old_solar = heat_score(0, g.shade, w.sw_wm2, g.albedo, 0)
+    new_solar = heat_score(0, shade, w.sw_wm2, albedo, 0)
+    return g.heat + new_solar - old_solar  # retains baseline rounding and correction
 ```
 
-Suggested `shade_gain` values for `interventions.csv`, consistent with the heat model's assumptions:
+Current approved semantics: **gain is the fraction of remaining sunlight
+blocked**, not an additive percentage of total shade. CSV values and prices
+remain unchanged:
 
-| Fix | `shade_gain` | `albedo_gain` | L0027 at 1pm (now 42.8°C) |
-|---|---|---|---|
-| Covered walkway | 1.0 (a roof blocks all direct sun) | 0 | 33.0°C |
-| Shade trees along most of the link | 0.6 (canopy blocks 80%, over ~75% of the link) | 0 | 36.9°C |
-| Shade sail | your figure (e.g. 0.9) | 0 | |
-| Cool paving | 0 | e.g. +0.3 | 41.8°C |
+| Fix | Shade gain | Albedo gain | Estimated RM/m |
+|---|---:|---:|---:|
+| shade_trees | 0.35 | 0 | 160 |
+| shade_sail | 0.75 | 0 | 350 |
+| covered_walkway | 1.00 | 0 | 1,000 |
+| cool_paving | 0 | 0.30 | 120 |
+
+The earlier 0.6 tree and 0.9 sail values were suggestions, not adopted inputs.
+Covered walkways force shade to 1. Gains and albedo cap at 1. The engine applies
+the solar-term **difference** to effective heat, retaining the exported baseline
+rounding and existing correction offset.
 
 Run it for every hour in `HOURS` to get the day's before and after.
 
 ## Things that will look odd
 
-- **At 7am, 8am and 7pm, coolest = shortest.** Heat stays below 32°C everywhere, so exposure is zero. (At 7am every link reads 26.4°C: the sun is not up yet.) At 9am and 6pm only the most exposed links pass 32°C. Test routing at 1pm, where the spread is widest (33.0 to 42.8°C).
-- **Heat differs between links only through shade and surface.** Air temperature, sunlight and wind are the same across the area in any given hour. That's why the covered walkways and tree-lined streets stand out.
-- **`heat_model.heat.heat_at` reads the file once and caches it** (restart after a re-run). `engine.heat_at` reads it on every call.
+- Baseline morning/evening heat often stays below the 32°C comfort line;
+  correction offsets can change spatial values. Do not assume all morning links
+  remain identical. Use actual effective heat to decide whether routes coincide.
+- `heat_model/effective.py` is the shared reader for the heat interface and
+  engine. `heat_model` preserves raw baseline heat; `heat` is effective;
+  `heat_source`, `sensor_source`, `hour`, `design_date` and correction-version
+  metadata identify the source. `engine.heat_at()` also retains `heat_score`.
+- Caches use input content and correction versions. A changed active bundle,
+  incomplete correction, bad hashes or mismatched baselines is rejected rather
+  than silently mixed. App reads never apply corrections or regenerate data.
 - **Some links are gated-estate streets** (`private = True` in `links.geojson`). They are included on purpose: residents walk their own estate's streets.
 - **Link IDs are frozen.** Don't re-pull the area; your flows and fixes are keyed by `link_id`.
 
 ## Your rows in `docs/assumptions.md`
 
 Fill these in as you set them: walking speed, trips per household by hour and destination, cost per metre of each fix, the `shade_gain` and `albedo_gain` you choose, and the comfort-line test at 30 and 34°C.
+
+## Offline correction and reproducible reporting
+
+Run `.venv\Scripts\python.exe -B -m heat_model.sensor_correction --activate`
+explicitly to create/verify a separate version under `data/corrections/` and
+activate it via a validated pointer. It never writes `links.geojson` or the raw
+sensor CSV. See [repair details](full_integration_repair.md) for windows, outlier
+policy, spatial weights, manifests and validation limitations.
+
+`integration_results.py` exports fresh demand, all-hour effective heat, all 66
+place resolutions, routing, priorities and benchmarks to a new version under
+`data/results/`. Canonical legacy `priorities.csv`, flow columns and hottest-link
+reports are retained as historical outputs, not live app inputs. Recomputed
+figures are in [final_results.md](final_results.md).
