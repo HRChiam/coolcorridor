@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 
 import engine
+from app_data import source_day, shared_directory_matches
 from cool_route import (
     ROUTE_LABELS, build_route_map, comparison_metrics, comparison_table,
     default_place_ids, fetch_routes, load_places,
@@ -13,8 +14,10 @@ from heat_map import (
     replay_date, sensor_snapshot,
 )
 from sensors_dashboard import render_sensors
+from planner import render_planner
 
 
+@st.fragment
 def render_heat_map() -> None:
     st.subheader("Heat across the walking network")
     st.write("Explore modelled heat on actual walking links around Putra Heights LRT Station.")
@@ -30,6 +33,9 @@ def render_heat_map() -> None:
         st.error(f"Heat network unavailable: {exc}")
         return
     corrected = links.attrs["sensor_corrected"]
+    if corrected:
+        st.warning("This Heat Map uses corrected heat. Cool Route and Planner currently use the uncorrected baseline; "
+                   "coordinate corrected-heat support with Person 2 before comparing their results.")
     st.caption(f"Design-day replay: {date} · {hour:02d}:00 Asia/Kuala_Lumpur. "
                + ("Sensor-corrected model heat; corrections may use simulated readings."
                   if corrected else "Uncorrected model heat — sensor correction outputs are unavailable for this hour."))
@@ -73,6 +79,7 @@ def render_heat_map() -> None:
                "This replay does not use today's forecast. Restart the app after shared model files change.")
 
 
+@st.fragment
 def render_cool_route() -> None:
     st.subheader("A cooler walk to your destination")
     st.write("Compare the shortest walk with a route that reduces modelled heat exposure.")
@@ -81,6 +88,9 @@ def render_cool_route() -> None:
         default_origin, default_destination = default_place_ids(places)
     except (OSError, ValueError, TypeError, KeyError) as exc:
         st.error(f"Places could not be loaded: {exc}")
+        return
+    if not shared_directory_matches(engine.DATA_DIR):
+        st.error("Cool Route disabled: the engine data directory differs from the other tabs. Use one shared repository data bundle.")
         return
 
     place_ids = places.place_id.tolist()
@@ -101,8 +111,15 @@ def render_cool_route() -> None:
         hour = st.select_slider("Departure time", options=list(engine.HOURS), value=14,
                                 format_func=lambda h: f"{h:02d}:00", key="route_hour")
 
-    st.caption("Design-day replay: 6 September 2026 · Asia/Kuala_Lumpur · "
+    try:
+        route_date = source_day(engine.DATA_DIR, (hour,))
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        st.error(f"Route heat/weather data unavailable: {exc}")
+        return
+    st.caption(f"Design-day replay: {route_date} · Asia/Kuala_Lumpur · "
                f"Cool routes allow up to {(engine.MAX_COOLER_DETOUR - 1) * 100:.0f}% extra distance.")
+    st.caption("UNCORRECTED MODEL heat: the routing engine reads heat_h07–heat_h19. "
+               "It currently does not use sensor-corrected columns.")
     try:
         with st.spinner("Comparing walking routes…"):
             routes, errors = fetch_routes(places, origin_id, destination_id, hour)
@@ -160,13 +177,19 @@ def main() -> None:
     st.set_page_config(page_title="CoolCorridor · Walking with less heat", page_icon="🌿", layout="wide")
     st.title("CoolCorridor")
     st.caption("Putra Heights · Walking with less heat")
-    route_tab, heat_tab, sensors_tab = st.tabs(["Cool Route", "Heat Map", "Sensors"], default="Sensors")
+    if not shared_directory_matches(engine.DATA_DIR):
+        st.error("Engine data override differs from the repository data used by Heat Map and Sensors. "
+                 "Remove COOLCORRIDOR_DATA_DIR for this app or coordinate one shared data directory with the team.")
+    route_tab, heat_tab, sensors_tab, planner_tab = st.tabs(
+        ["Cool Route", "Heat Map", "Sensors", "Planner"], default="Sensors")
     with route_tab:
         render_cool_route()
     with heat_tab:
         render_heat_map()
     with sensors_tab:
         render_sensors()
+    with planner_tab:
+        render_planner()
 
 
 if __name__ == "__main__":

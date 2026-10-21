@@ -172,4 +172,7 @@ Manual demonstration checks:
 Known limitations are the provisional detector/freshness thresholds, no automatic
 CSV/config provenance check, synthetic-only data, and internet-dependent CARTO
 basemap tiles. No live streaming, automatic correction or real-sensor claims are
-made. The later Planner phase is outside this work.
+made. Planner is now available; see [the integration QA handoff](integration_qa.md)
+for current system-wide limitations. Phase 7 validates simulation configuration
+before creating fault annotations: invalid configuration produces a warning and
+omits those annotations while actual CSV-based detection remains operational.

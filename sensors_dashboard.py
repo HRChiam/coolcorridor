@@ -11,7 +11,7 @@ from pydeck.types import String
 import streamlit as st
 
 from cool_route import _coordinate
-from simulate_sensors import SENSOR_COLUMNS, load_config
+from simulate_sensors import SENSOR_COLUMNS, load_config, _validate_config
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
@@ -77,6 +77,7 @@ def load_sensor_data(data_dir=None, config_path=None):
     notices = []
     try:
         config = load_config(Path(config_path) if config_path is not None else ROOT / "config/sensor_simulation.json")
+        _validate_config(config, set(sites.sensor_id))
     except (OSError, ValueError, TypeError) as exc:
         config = None
         notices.append(f"Simulation configuration unavailable; injected fault annotations omitted: {exc}")
@@ -240,6 +241,7 @@ def history_charts(history, faults, sensor_id):
     return charts
 
 
+@st.fragment
 def render_sensors():
     st.subheader("Sensors Dashboard")
     st.info("SIMULATED DATA — all sensor measurements are synthetic. This dashboard demonstrates "

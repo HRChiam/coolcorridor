@@ -13,8 +13,8 @@ From the repository root in PowerShell, using the existing environment:
 .venv\Scripts\python.exe -B -m streamlit run app.py --server.address=127.0.0.1 --server.port=8501 --browser.gatherUsageStats=false
 ```
 
-Open http://127.0.0.1:8501. Heat Map is the initial tab; Cool Route is also
-available and keeps its independent departure-time control. Stop with Ctrl+C.
+Open http://127.0.0.1:8501 and select Heat Map. The current four-tab app starts
+on Sensors; replay controls remain independent. Stop with Ctrl+C.
 No new dependencies are required. For a fresh environment, install
 `requirements-person3-lock.txt` as described in the README.
 
@@ -56,8 +56,11 @@ alone does not apply a correction. Person 1's reader caches the link file, so
 restart the app after teammates regenerate shared model outputs. Do not run the
 correction or heat scripts merely to view this tab.
 The adapter checks the displayed heat against the file's selected-hour source
-column. If the reader has older cached values, it requests a restart instead of
-claiming a correction state that disagrees with the plotted numbers.
+column. Phase 7 also checks geometry, shade, surface attributes, baseline heat
+and design-weather coherence. If the reader has older cached values, it requests
+a restart instead of displaying an inconsistent snapshot. It never clears or
+modifies Person 1's cache. If corrected data arrives before Person 2 integrates
+it, a warning explains that Route and Planner still use baseline heat.
 
 The heat score is a simplified index combining air, sun, shade, wind and surface
 reflectivity. Its units are expressed in degrees C, but it is **not measured air
@@ -158,4 +161,5 @@ The earlier shared-interface issue remains: Person 2's engine reads `heat_hXX`,
 while Person 1's heat reader prefers corrected columns when available. Both
 currently show the same uncorrected baseline. Future correction integration
 requires agreement with Persons 1 and 2; this tab does not alter their code.
-Planner and Sensors tabs are later phases and are not implemented here.
+Planner and Sensors are now available. See [the integration QA handoff](integration_qa.md)
+for the current junction-snapping, radiation and correction dependencies.

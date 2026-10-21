@@ -6,10 +6,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 import pydeck as pdk
 from pydeck.types import String
 
 from cool_route import _coordinate
+from app_data import design_day, validate_heat_weather
 from heat_model.heat import HOURS, TZ, design_weather, heat_at
 
 DATA = Path(__file__).resolve().parent / "data"
@@ -63,6 +65,23 @@ def load_heat_data(hour):
             or not np.allclose(links.heat.to_numpy(), raw.loc[links.link_id, source_column].to_numpy(dtype=float),
                                rtol=0, atol=1e-9)):
         raise ValueError("Heat reader contains cached values from an older file. Restart the app to reload shared heat data")
+    # Person 1 caches the entire GeoDataFrame. Unchanged heat does not establish
+    # that its geometry, shade, baseline or surface attributes are still current.
+    fresh = gpd.read_file(DATA / "links.geojson").to_crs(4326).set_index("link_id").loc[links.link_id]
+    current = links.set_index("link_id")
+    stale = not np.allclose(current.heat_model, fresh[f"heat_h{hour:02d}"], rtol=0, atol=1e-9)
+    for field in ("length_m", "canopy", "albedo"):
+        stale |= not np.allclose(current[field], fresh[field], rtol=0, atol=1e-9)
+    stale |= not np.allclose(current.shade, fresh[f"shade_h{hour:02d}"], rtol=0, atol=1e-9)
+    for field in ("covered", "surface", "name", "u", "v"):
+        stale |= not current[field].fillna("").astype(str).equals(fresh[field].fillna("").astype(str))
+    stale |= not current.geometry.geom_equals_exact(fresh.geometry, tolerance=1e-9).all()
+    if stale:
+        raise ValueError("Heat reader contains cached attributes or geometry from an older file. Restart the app to reload shared heat data")
+    # Verify weather when present in this source bundle. The app's replay-date
+    # reader independently requires weather before displaying the Heat Map.
+    if (DATA / "weather.csv").exists():
+        validate_heat_weather(fresh, design_day(DATA / "weather.csv"), (hour,))
     return links
 
 
@@ -102,7 +121,14 @@ def sensor_snapshot(hour, date, *, stream_path=None):
     mapping = sites.set_index("sensor_id").link_id
     if not readings.sensor_id.map(mapping).eq(readings.link_id).all():
         raise ValueError("Sensor stream contains an unknown or mismatched sensor/link ID")
+    if (not readings.timestamp.astype(str).str.contains(r"(?:[+-]\d{2}:\d{2}|Z)$", regex=True).all()
+            or readings.duplicated(["sensor_id", "timestamp"]).any()):
+        raise ValueError("Sensor timestamps must include a timezone and be unique per sensor")
     readings["at"] = pd.to_datetime(readings.timestamp, utc=True, errors="raise").dt.tz_convert(TZ)
+    if (readings["at"].isna().any() or readings.duplicated(["sensor_id", "at"]).any()
+            or (readings["at"].dt.minute.mod(5).ne(0) | readings["at"].dt.second.ne(0)
+                | readings["at"].dt.microsecond.ne(0)).any()):
+        raise ValueError("Sensor timestamps must be unique valid five-minute replay samples")
     for col in ("air_temp_c", "rh_pct", "surface_temp_c"):
         readings[col] = pd.to_numeric(readings[col], errors="raise")
         if not np.isfinite(readings[col]).all():

@@ -3,7 +3,7 @@
 Heat-aware walking routes and cooling intervention planning around Putra Heights
 LRT. The repository contains the heat model (Person 1), routing and planner
 (Person 2), and the synthetic sensor generator and Streamlit + pydeck Cool Route,
-Heat Map and Sensors tabs (Person 3).
+Heat Map, Sensors and Planner tabs (Person 3).
 
 ## Launch the app locally
 
@@ -46,6 +46,32 @@ history to see the six-sample gap and 12:30 recovery. The full-day option may sh
 future history, but statuses and event counts remain tied to replay time.
 See [the Sensors Dashboard guide](docs/sensors_dashboard.md) for detection rules,
 configured fault annotations, provenance limitations and verification steps.
+
+The fourth tab, **Planner**, calls Person 2's actual `engine.priorities(budget_rm)`.
+Start at **RM100,000** to see 14 selected shade-tree interventions costing
+**RM99,584**, leaving **RM416**. Estimated daily exposure saving is
+**5,561.765 person·°C·minutes/day**, using uncorrected model heat and assumed
+walking demand. Change the budget to recalculate the greedy allocation; hover
+the highlighted walking links for costs and benefits. Select a link and
+improvement, then press **Preview intervention** for real engine hourly
+before/after projections. Previews are independent of the selected budget plan
+and do not write data. The standalone engine took about 10 seconds locally;
+uncached app requests can take longer, especially during browser automation.
+Unchanged inputs are cached in memory.
+
+See [the Planner guide](docs/planner_app.md) for the actual algorithm, cost
+assumptions, unit definitions, current weather/corrected-heat limitations and
+verification steps. The existing environment and launch command support all
+four tabs; no additional dependencies are needed.
+
+Phase 7 integration status is **PARTIAL**. The app now validates shared
+heat/weather inputs, detects stale Heat Map attributes, and isolates tab
+interactions. The audit found an engine place-to-junction snapping problem,
+mixed-date planner radiation and missing corrected-heat integration. See
+[the integration QA handoff](docs/integration_qa.md) for evidence, owners,
+suggested interfaces, test/browser results and deployment blockers. Current
+route and investment numbers are the unchanged engine outputs and need
+re-baselining after Person 2 fixes snapping; they are not validated field results.
 
 Run the full suite, including Streamlit interaction tests:
 
