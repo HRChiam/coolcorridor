@@ -1,4 +1,6 @@
-# CoolCorridor deployment guide
+# COOLNEX deployment guide
+
+> Official project brand: **COOLNEX**. See the [rebranding review](rebranding.md) for the active deployment snapshot and intentional compatibility/historical exceptions.
 
 > Merge update: numerical results and packaging below describe the pre-merge release. See [merge resolution](merge_resolution.md) for the current `a64cdcf` integration, recalculated Planner and routing results, active correction bundle and deployment snapshot. Previous browser/cloud evidence does not verify this merged build.
 
@@ -201,9 +203,9 @@ The Docker image was **not built or run here** because Docker/WSL are unavailabl
 Commands for a later approved local/container test:
 
 ```bash
-docker build -t coolcorridor:review .
-docker run --rm -p 8501:8501 coolcorridor:review
-docker run --rm coolcorridor:review python -B deployment_check.py --app-test
+docker build -t coolnex:review .
+docker run --rm -p 8501:8501 coolnex:review
+docker run --rm coolnex:review python -B deployment_check.py --app-test
 ```
 
 No container registry, paid service or deployment was created.

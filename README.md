@@ -1,4 +1,6 @@
-# CoolCorridor
+# COOLNEX
+
+> Official project brand: **COOLNEX**. See the [rebranding review](docs/rebranding.md) for the active deployment snapshot and intentional compatibility/historical exceptions.
 
 Current merge review: [resolved integration and updated results](docs/merge_resolution.md). Planner now uses safety-aware demand, horizon benefits and the budget optimizer from main. Historical numerical examples below are superseded by this report.
 

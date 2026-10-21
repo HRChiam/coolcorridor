@@ -1,5 +1,7 @@
 # Integration merge review: origin/main a64cdcf
 
+> Official project brand: **COOLNEX**. See the [rebranding review](rebranding.md) for the active deployment snapshot and intentional compatibility/historical exceptions.
+
 This report supersedes pre-merge numerical examples in the integration and
 deployment reports. The active merge combines `c5f9a76` (integrated deployment
 release) with `a64cdcf` (main, "fix budget"). No merge commit, push or deployment

@@ -104,9 +104,9 @@ and app alerts remain for a later phase.
 For experiments that preserve the default output, write to a temporary folder:
 
 ```powershell
-.venv\Scripts\python.exe -B simulate_sensors.py --no-faults --output "$env:TEMP\coolcorridor-no-faults.csv"
-.venv\Scripts\python.exe -B simulate_sensors.py --seed 42 --output "$env:TEMP\coolcorridor-seed42.csv"
-.venv\Scripts\python.exe -B simulate_sensors.py --config config/sensor_simulation.json --output "$env:TEMP\coolcorridor-custom.csv"
+.venv\Scripts\python.exe -B simulate_sensors.py --no-faults --output "$env:TEMP\coolnex-no-faults.csv"
+.venv\Scripts\python.exe -B simulate_sensors.py --seed 42 --output "$env:TEMP\coolnex-seed42.csv"
+.venv\Scripts\python.exe -B simulate_sensors.py --config config/sensor_simulation.json --output "$env:TEMP\coolnex-custom.csv"
 ```
 
 Noise draws happen before faults. Thus, with the same seed/config, disabling
