@@ -27,16 +27,22 @@ Every assumption and simulated input in CoolCorridor, as the organisers require.
 | Covered walkways | OSM `covered=yes` (18 links) plus hand tags | Real (OSM + hand) |
 | Walking network | OSM walk network pulled 1,200 m around the station, including gated-estate streets (`access=private`); homes and places within 800 m | Gated estates connect only through gates beyond 800 m; residents walk their own streets |
 | Sensor correction | Each link within 150 m of a sensor takes its nearest sensor's air-temperature offset, scaled by 1 − distance/150 m; the heat score shifts one-for-one | Our method |
-| Sensor reading per hour | Median of readings within ±30 min of the hour | Ignores spikes; a silent sensor is skipped that hour |
+| Sensor reading per hour | Median of accepted readings in [hour − 30 min, hour + 30 min), Asia/Kuala_Lumpur | Exclude air residual departures >3°C from the previous 30-minute median, requiring 3 previous readings; skip silent sensor-hours |
 
 ## Routing and planner (Person 2)
 
 | Assumption | Value | Basis |
 |---|---|---|
 | Comfort line | 32°C | Our choice; to test at 30 and 34 |
-| Trips per household by hour and destination | To set | Our estimate |
+| One-way trips per household/day | Transit 0.9, shop 0.45, park 0.15, community 0.10 | Assumptions; nearest reachable destination by walking distance; 855 households |
+| Hour weights 07..19 | 0.13, 0.12, 0.07, 0.05, 0.05, 0.06, 0.06, 0.07, 0.08, 0.10, 0.09, 0.07, 0.05; normalized | Assumptions, not observed pedestrian counts |
+| Walking speed | 72 m/min (1.2 m/s) | Assumption |
 | Maximum detour for a cool route | 25% longer than shortest | Design choice |
-| Cost per fix (trees, shade sail, covered walkway, cool paving) | To find | Public figure if found, else assumption |
+| Cost per metre: trees / sail / covered / paving | RM160 / RM350 / RM1,000 / RM120 | Existing interventions.csv; unverified estimates, not quotations |
+| Shade gains: trees / sail / covered / paving | 0.35 / 0.75 / 1.00 / 0 | Existing CSV unchanged |
+| Shade-gain semantics | s_after = min(1, s_before + (1 − s_before) × gain); covered forces 1 | User explicitly chose proportional gain on remaining sunlight during integration repair |
+| Cool paving | Albedo increases by 0.30, capped at 1 | Existing CSV assumption |
+| Effective heat after an intervention | Before effective heat + change in model solar term | Retains correction offset and rounded exported baseline; does not recalibrate sensors or reroute demand |
 
 ## Simulated sensors (Person 3)
 
@@ -60,3 +66,32 @@ Person 3 settings and verification commands are described in
 [sensor_simulator.md](sensor_simulator.md). Offset overrides, noise amplitudes,
 seed and fault choices live in `config/sensor_simulation.json`; these provisional
 choices do not establish real-world calibration or fault-detection thresholds.
+
+## Integrated correction and date contract
+
+The model/replay date is fixed to **2026-09-06, Asia/Kuala_Lumpur (UTC+08)**.
+Weather must contain exactly one finite design-day record at each hour 07..19.
+Forecast rows cannot change heat, intervention radiation or correction validity.
+The manifest records the whole weather file hash for provenance and a separate
+selected-design-row hash for applicability.
+
+Corrections use the existing sensor link midpoint and target link geometry in
+local UTM, nearest available sensor within 150 m, linear distance decay, and a
+median air residual versus design-hour weather. At least one accepted sample per
+sensor-hour suffices, retaining Person 1's policy. Zero-coverage hours retain
+zero offset and explicit baseline labels. Two-decimal effective heat is a heat
+**index**, never a substitution of sensor air temperature for model heat.
+
+Faults remain intact in the raw CSV. Calibration excludes detected outliers
+using the existing Dashboard's causal residual rule, independent of configured
+fault schedules. This replaces reliance on the median alone; it does not claim
+to implement the Build Plan's underspecified across-sensor 3-sigma rule. With
+only eight sites a single outlier cannot reach 3 population standard deviations
+from their own mean. The chosen detector and its limitations are recorded in
+each correction manifest.
+
+Validation uses the previous hour's calibration against the next hour's median
+simulated air residual (disjoint adjacent centred windows). It demonstrates
+recovery of synthetic offsets. It does not validate heat-index accuracy, real
+microclimate, pedestrian comfort or health outcomes. See
+[full integration repair](full_integration_repair.md) for provenance and safety.

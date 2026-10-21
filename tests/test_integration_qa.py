@@ -29,7 +29,7 @@ def bundle(tmp_path):
     return tmp_path
 
 
-def test_all_hour_heat_interfaces_match_baseline_and_design_weather():
+def test_all_hour_heat_interfaces_match_effective_heat_and_design_weather():
     weather = app_data.design_day(ROOT / "data/weather.csv")
     for hour in engine.HOURS:
         display = heat_map.load_heat_data(hour).set_index("link_id")
@@ -39,7 +39,9 @@ def test_all_hour_heat_interfaces_match_baseline_and_design_weather():
         w = weather.loc[hour]
         expected = heat.heat_score(w.air_temp_c, display.shade, w.sw_wm2, display.albedo, w.wind_ms)
         np.testing.assert_allclose(display.heat_model, expected, rtol=0, atol=.00501)
-        assert not display.attrs["sensor_corrected"]
+        assert display.attrs["sensor_corrected"]
+        assert routed.heat_source.eq("corrected").all()
+        assert routed.sensor_source.eq("simulated").all()
 
 
 @pytest.mark.parametrize("hour", [7, 14])
@@ -54,7 +56,6 @@ def test_real_route_exposure_reconstructs_from_same_hour_heat_map(hour):
         assert route["distance_m"] == pytest.approx(walked.length_m.sum(), abs=.0051)
 
 
-@pytest.mark.xfail(strict=True, reason="Person 2 must honor supplied place.node_id; geometry endpoint order is not u/v order")
 def test_engine_uses_authoritative_station_node():
     links = engine._read_links()
     places = engine._read_places()
@@ -64,36 +65,36 @@ def test_engine_uses_authoritative_station_node():
     assert engine._resolve_node(graph, places, "P066") == expected
 
 
-def test_confirmed_correction_gap_is_not_reported_as_integrated(monkeypatch, bundle):
-    links = heat._links().copy()
-    links["heat_corr_h14"] = links.heat_h14 + .5
-    monkeypatch.setattr(heat, "_links", lambda: links)
+def test_unversioned_corrected_columns_are_rejected_by_both_readers(monkeypatch, bundle):
     payload = json.loads((bundle / "links.geojson").read_text(encoding="utf-8"))
     for feature in payload["features"]:
         feature["properties"]["heat_corr_h14"] = feature["properties"]["heat_h14"] + .5
     (bundle / "links.geojson").write_text(json.dumps(payload), encoding="utf-8")
     monkeypatch.setattr(engine, "DATA_DIR", bundle)
-    person1 = heat.heat_at(14).set_index("link_id")
-    person2 = engine.heat_at(14).set_index("link_id")
-    np.testing.assert_allclose(person1.heat - person2.heat_score, .5)
-    # The assertions document an unresolved interface, not a fabricated correction.
+    for reader in (lambda: heat.heat_at(14, data_dir=bundle), lambda: engine.heat_at(14)):
+        with pytest.raises(ValueError, match="(?i)unversioned|embedded"):
+            reader()
 
 
-def test_confirmed_radiation_gap_and_forecast_independence(bundle, monkeypatch):
+def test_design_radiation_is_independent_of_extra_forecast_rows(bundle, monkeypatch):
     monkeypatch.setattr(engine, "DATA_DIR", bundle)
     weather = pd.read_csv(bundle / "weather.csv")
-    expected = weather.groupby("hour").sw_wm2.mean()
     design = app_data.design_day(bundle / "weather.csv")
-    assert engine._weather_radiation()[14] == expected.loc[14]
-    assert expected.loc[14] != design.loc[14, "sw_wm2"]
-    weather.loc[weather.day == "forecast", "air_temp_c"] = -50
+    expected = engine._weather_radiation()
+    assert expected == design.sw_wm2.to_dict()
+    before = engine.apply_fix("L0027", "shade_trees")
+    weather.loc[weather.day == "forecast", ["air_temp_c", "sw_wm2"]] = [-50, 99999]
+    weather = pd.concat([weather, weather.loc[weather.day == "forecast"]], ignore_index=True)
     weather.to_csv(bundle / "weather.csv", index=False)
     pd.testing.assert_frame_equal(app_data.design_day(bundle / "weather.csv"), design)
+    assert engine._weather_radiation() == expected
+    assert engine.apply_fix("L0027", "shade_trees") == before
 
 
 @pytest.mark.parametrize("field", ["shade_h14", "canopy", "albedo", "surface", "geometry", "baseline_with_correction"])
-def test_heat_cache_rejects_changed_nonheat_inputs(monkeypatch, bundle, field):
-    cached = heat.heat_at(14)
+def test_heat_cache_updates_or_rejects_changed_nonheat_inputs(monkeypatch, bundle, field):
+    monkeypatch.setattr(heat_map, "DATA", bundle)
+    cached = heat_map.load_heat_data(14)
     payload = json.loads((bundle / "links.geojson").read_text(encoding="utf-8"))
     feature = payload["features"][0]
     if field in ("shade_h14", "canopy", "albedo"):
@@ -103,14 +104,19 @@ def test_heat_cache_rejects_changed_nonheat_inputs(monkeypatch, bundle, field):
     elif field == "geometry":
         feature["geometry"]["coordinates"][0][0] += .00001
     else:
-        for item in payload["features"]:
-            item["properties"]["heat_corr_h14"] = item["properties"]["heat_h14"]
+        feature["properties"]["heat_corr_h14"] = feature["properties"]["heat_h14"]
         feature["properties"]["heat_h14"] += 1
     (bundle / "links.geojson").write_text(json.dumps(payload), encoding="utf-8")
-    monkeypatch.setattr(heat_map, "DATA", bundle)
-    monkeypatch.setattr(heat_map, "heat_at", lambda h: cached)
-    with pytest.raises(ValueError, match="Restart"):
-        heat_map.load_heat_data(14)
+    if field in ("shade_h14", "albedo", "baseline_with_correction"):
+        with pytest.raises(ValueError):
+            heat_map.load_heat_data(14)
+    else:
+        fresh = heat_map.load_heat_data(14)
+        if field == "geometry":
+            assert not fresh.geometry.iloc[0].equals(cached.geometry.iloc[0])
+        else:
+            assert fresh[field].iloc[0] == feature["properties"][field]
+            assert fresh[field].iloc[0] != cached[field].iloc[0]
 
 
 def test_changed_design_weather_rejects_old_heat(monkeypatch, bundle):

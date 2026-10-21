@@ -52,6 +52,7 @@ def test_real_geometry_and_metrics_match_network_without_writes(real_routes):
     # Independent read of frozen link geometries and hourly properties.
     network = json.loads((engine.DATA_DIR / "links.geojson").read_text(encoding="utf-8"))
     links = {f["properties"]["link_id"]: f for f in network["features"]}
+    effective = engine.heat_at(14).set_index("link_id").heat
     for mode, route in routes.items():
         expected = [links[lid] for lid in route["link_ids"]]
         # Shapely emits tuples; GeoJSON on disk contains equivalent JSON lists.
@@ -61,7 +62,7 @@ def test_real_geometry_and_metrics_match_network_without_writes(real_routes):
         sun = sum(f["properties"]["length_m"] / engine.WALKING_METRES_PER_MIN
                   * (1 - f["properties"]["shade_h14"]) for f in expected)
         heat = sum(f["properties"]["length_m"] / engine.WALKING_METRES_PER_MIN
-                   * max(0, f["properties"]["heat_h14"] - engine.COMFORT_C) for f in expected)
+                   * max(0, effective.loc[f["properties"]["link_id"]] - engine.COMFORT_C) for f in expected)
         assert route["distance_m"] == pytest.approx(distance, abs=0.005)
         assert route["walking_time_min"] == pytest.approx(distance / engine.WALKING_METRES_PER_MIN, abs=0.00051)
         assert route["minutes_in_sun"] == pytest.approx(sun, abs=0.00051)
@@ -150,22 +151,23 @@ def test_app_default_calls_both_real_modes_and_displays_metrics(monkeypatch, rea
     assert tab.get("deck_gl_json_chart")
     assert len(tab.dataframe) == 1
     pd.testing.assert_frame_equal(tab.dataframe[0].value, cool_route.comparison_table(routes).round(3))
-    assert tab.metric[0].value.startswith("6.782")
+    assert tab.metric[0].value.startswith(f"{routes['coolest']['heat_avoided']:.3f}")
 
 
 def test_app_time_and_place_changes_show_current_results():
     at = app().run()
     at.select_slider(key="route_hour").set_value(7).run()
     assert not at.exception
-    assert at.metric[0].value.startswith("0.000")
-    assert any("same walking links" in message.value for message in at.info)
+    expected_cool = engine.route("P043", "P066", 7, "coolest")
+    assert at.metric[0].value.startswith(f"{expected_cool['heat_avoided']:.3f}")
     at.selectbox(key="route_origin").select("P051").run()
     assert not at.exception
     expected = engine.route("P051", "P066", 7, "shortest")
     assert at.dataframe[0].value.loc["Distance (m)", "Shortest route"] == expected["distance_m"]
     at.select_slider(key="route_hour").set_value(19).run()
     assert not at.exception
-    assert at.metric[0].value.startswith("0.000")
+    expected_cool = engine.route("P051", "P066", 19, "coolest")
+    assert at.metric[0].value.startswith(f"{expected_cool['heat_avoided']:.3f}")
 
 
 def test_app_invalid_selection_clears_previous_map():
@@ -280,7 +282,9 @@ def test_identical_routes_keep_distinct_colors_and_draw_order():
     places = cool_route.load_places()
     routes, errors = cool_route.fetch_routes(places, "P043", "P066", 7)
     assert not errors
-    assert routes["shortest"]["link_ids"] == routes["coolest"]["link_ids"]
+    # Exercise overlap visibility with the real shortest geometry in both slots.
+    # Corrected morning heat can now make a different coolest path worthwhile.
+    routes["coolest"] = copy.deepcopy(routes["shortest"])
     by_id = places.set_index("place_id")
     # Even reversed input must put the wider orange path below narrow green.
     deck = json.loads(cool_route.build_route_map(

@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 
 import engine
-from app_data import source_day, shared_directory_matches
+from app_data import source_day, shared_directory_matches, heat_source_label
 from cool_route import (
     ROUTE_LABELS, build_route_map, comparison_metrics, comparison_table,
     default_place_ids, fetch_routes, load_places,
@@ -32,13 +32,8 @@ def render_heat_map() -> None:
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
         st.error(f"Heat network unavailable: {exc}")
         return
-    corrected = links.attrs["sensor_corrected"]
-    if corrected:
-        st.warning("This Heat Map uses corrected heat. Cool Route and Planner currently use the uncorrected baseline; "
-                   "coordinate corrected-heat support with Person 2 before comparing their results.")
     st.caption(f"Design-day replay: {date} · {hour:02d}:00 Asia/Kuala_Lumpur. "
-               + ("Sensor-corrected model heat; corrections may use simulated readings."
-                  if corrected else "Uncorrected model heat — sensor correction outputs are unavailable for this hour."))
+               + heat_source_label(links.attrs))
     avg, hottest, shade_metric, count = st.columns(4)
     avg.metric("Average link heat index", f"{summary['average']:.2f} °C")
     hottest.metric("Hottest walking link", f"{summary['hottest']:.2f} °C")
@@ -76,7 +71,7 @@ def render_heat_map() -> None:
     st.caption("Hover a link for its heat index, shade, covered status, canopy and surface. "
                "Outlines highlight existing attributes; the central line keeps its heat color. "
                "Canopy is a link-level estimate, not a map of individual trees. "
-               "This replay does not use today's forecast. Restart the app after shared model files change.")
+               "This replay uses design-day weather. Validated data changes invalidate model caches.")
 
 
 @st.fragment
@@ -118,8 +113,6 @@ def render_cool_route() -> None:
         return
     st.caption(f"Design-day replay: {route_date} · Asia/Kuala_Lumpur · "
                f"Cool routes allow up to {(engine.MAX_COOLER_DETOUR - 1) * 100:.0f}% extra distance.")
-    st.caption("UNCORRECTED MODEL heat: the routing engine reads heat_h07–heat_h19. "
-               "It currently does not use sensor-corrected columns.")
     try:
         with st.spinner("Comparing walking routes…"):
             routes, errors = fetch_routes(places, origin_id, destination_id, hour)
@@ -131,6 +124,8 @@ def render_cool_route() -> None:
     if not routes:
         st.info("No route results are available. Try different places or check the local data files.")
         return
+
+    st.caption(heat_source_label(next(iter(routes.values()))))
 
     if len(routes) == 2:
         comparison = comparison_metrics(routes)
@@ -163,7 +158,8 @@ def render_cool_route() -> None:
                     key="cool_route_map", alt="Shortest and coolest walking paths with origin and destination markers")
     st.caption("Orange: shortest · Green: coolest · O: origin · D: destination. "
                "Shared links show green over a wider orange line. Hover for route metrics; drag or zoom to explore. "
-               "Markers show place locations; walking paths start and end at the engine’s nearest network junctions.")
+               "Markers show place locations; walking paths use exported place junction IDs. "
+               "Validated coordinate fallback is used only when an ID is absent.")
 
     st.subheader("Route comparison")
     st.dataframe(comparison_table(routes).round(3), width="stretch")

@@ -59,11 +59,13 @@ def test_real_budget_outputs(budget, inputs):
     if budget == 0:
         assert table.empty and summary["benefit"] == 0
     elif budget == 100000:
-        assert len(table) == 14
-        assert summary["spent"] == 99584
-        assert summary["remaining"] == 416
-        assert summary["benefit"] == pytest.approx(5561.76496)
+        assert len(table) == 15
+        assert summary["spent"] == 99920
+        assert summary["remaining"] == 80
+        assert summary["benefit"] == pytest.approx(5587.79224)
         assert set(table.fix) == {"shade_trees"}
+        assert table.attrs["heat_source"] == "corrected"
+        assert table.attrs["sensor_source"] == "simulated"
 
 
 def test_display_retains_ranks_units_and_selected_status(allocation):
@@ -111,8 +113,8 @@ def test_actual_preview_is_isolated_and_nonmutating(inputs, allocation):
     baseline = allocation[0].copy(deep=True)
     result = planner.fetch_preview("L0027", "shade_trees", *inputs)
     assert result["cost_rm"] == 4896
-    assert result["heat_drop"] == pytest.approx(3.4254)
-    assert result["person_min_saved_day"] == pytest.approx(332.718)
+    assert result["heat_drop"] == pytest.approx(3.4157)
+    assert result["person_min_saved_day"] == pytest.approx(364.838)
     hours = planner.preview_table(result)
     assert len(hours) == 13
     assert hours.loc[6, "Before heat index (°C)"] - hours.loc[6, "After heat index (°C)"] == pytest.approx(result["heat_drop"], abs=.0001)
@@ -143,7 +145,7 @@ def test_missing_preview_fields_and_results(monkeypatch, inputs):
 def test_real_map_geometries_serialization_and_colors(inputs, allocation):
     links, _ = inputs
     base, selected, skipped = planner.planning_paths(links, allocation[0])
-    assert not skipped and len(base) == 1491 and len(selected) == 14
+    assert not skipped and len(base) == 1491 and len(selected) == 15
     deck = json.loads(planner.build_planner_map(base, selected).to_json())
     assert deck["mapProvider"] == "carto" and deck["mapStyle"] == planner.pdk.map_styles.CARTO_LIGHT
     assert set(tuple(c) for c in planner.FIX_COLORS.values()).__len__() == 4
@@ -186,8 +188,8 @@ def test_app_budget_preview_and_previous_tabs():
     assert not at.exception
     assert [tab.label for tab in at.tabs] == ["Cool Route", "Heat Map", "Sensors", "Planner"]
     tab = at.tabs[3]
-    assert tab.metric[0].value == "RM 99,584.00"
-    assert tab.metric[1].value == "RM 416.00"
+    assert tab.metric[0].value == "RM 99,920.00"
+    assert tab.metric[1].value == "RM 80.00"
     at.button(key="planner_preview_button").click().run()
     assert not at.exception
     assert at.tabs[3].metric[4].value == "RM 4,896.00"

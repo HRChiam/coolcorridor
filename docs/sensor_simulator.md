@@ -131,15 +131,19 @@ humidity clipping, repeatability, configurable offsets/faults, invalid inputs,
 CSV writing, Person 2's latest-reading adapter, and Person 1's correction reader.
 The real-data test checks shared input bytes remain unchanged.
 
-## Later handoff to Persons 1 and 2
+## Integrated handoff to Persons 1 and 2
 
 The output can be read by `engine.latest_sensors()` and the existing correction
 reader. The tests exercise both without running correction or changing engine
 code. A 30-minute gap does not necessarily eliminate a whole sensor-hour: with
 these defaults all 104 sensor-hour medians still have readings.
 
-Heat correction is **not run in this phase**. Coordinate its ownership and the
-known corrected-heat/weather/shade-gain integration issues with Persons 1 and 2
-before regenerating shared heat or planner outputs. The correction script writes
-`links.geojson` and `sensor_validation.csv`; running it is a separate handoff.
-No Git commit or push is part of the simulator phase.
+The simulator still does not run correction or change heat outputs. The later
+integration repair added an explicit offline command,
+`python -B -m heat_model.sensor_correction --activate`, that writes separately
+versioned artifacts and never overwrites `links.geojson` or this raw stream.
+It excludes detected anomalies before medians and validates design date,
+timestamps, mappings and provenance. All three model tabs now share validated
+effective heat. See [full integration repair](full_integration_repair.md).
+The original simulator config and 1,154 CSV readings remain unchanged. Do not
+regenerate them simply to view the app. No commit or push is automatic.

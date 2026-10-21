@@ -1,0 +1,2 @@
+# The reviewed runtime contains byte-hashed source/data; Git must preserve it.
+deployment/*.zip -text

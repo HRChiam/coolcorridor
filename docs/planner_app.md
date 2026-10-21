@@ -77,7 +77,7 @@ temperature. Benefits are prominently **MODELLED / SIMULATED** estimates.
 
 Actual intervention assumptions from the current CSV:
 
-| Fix | RM/metre | Additive shade gain | Additive albedo gain |
+| Fix | RM/metre | Gain on remaining sunlight | Additive albedo gain |
 |---|---:|---:|---:|
 | shade_trees | 160 | 0.35 | 0 |
 | shade_sail | 350 | 0.75 | 0 |
@@ -91,29 +91,22 @@ land ownership, access, tree maturation and construction feasibility need review
 The engine uses 72 m/min walking speed, assumed household trip rates and hourly
 trip weights. These inputs are not observed pedestrian counts.
 
-## Important integration limits
+## Shared heat, weather and shade contract
 
-The current engine reads **uncorrected `heat_hXX`** even if `heat_corr_hXX` later
-appears. There are currently no corrected columns in the shared GeoJSON. Its
-docstrings imply corrected-heat support, but the implementation does not use
-those columns. The Planner explicitly labels this baseline and does not run a
-correction or imply one has been applied. Coordinate with Persons 1 and 2 before
-changing this behavior.
+The engine, Heat Map and Cool Route consume one validated effective heat bundle.
+`heat_model` is the uncorrected export; effective `heat` includes offline
+**SIMULATED** correction where available. Source/version metadata is preserved
+in recommendations and previews and displayed honestly. No bundle means explicit
+baseline fallback; invalid/incomplete bundles fail rather than mixing sources.
 
-`engine._weather_radiation()` currently averages all weather rows by hour,
-including design-day and forecast rows. Baseline heat comes from the design
-day. These are actual engine projections, not fully design-day-calibrated
-intervention estimates. Resolving the weather filter belongs to Person 2.
-The app leaves this shared interface unchanged and discloses the limitation.
-
-Phase 7 also confirmed that engine coordinate snapping can disagree with the
-authoritative `places.node_id`, including the station. Walking demand and thus
-benefits need re-baselining after Person 2 fixes this. See
-[the integration QA handoff](integration_qa.md) for evidence and the suggested
-resolver change. Current values remain real engine output, not validated
-investment advice. Person 3 now rejects mismatched baseline heat/design weather
-before invoking the engine and isolates Planner widget reruns using a Streamlit
-fragment; neither change replaces the planning algorithm.
+Weather uses exactly one design record per hour on **2026-09-06**,
+Asia/Kuala_Lumpur; forecast rows cannot affect solar changes. All 66 place
+resolutions use authoritative junction IDs, fixing demand and route endpoints.
+Shade after a fix is `before + (1 − before) × gain`, capped at 1, with covered
+walkway forcing full shade. Original CSV gains and costs are unchanged.
+`apply_fix` adds the model solar-term difference to effective heat, retaining
+its calibration offset and rounded original export. Demand stays fixed.
+See [integration repair](full_integration_repair.md) for evidence and limitations.
 
 ## Map and preview isolation
 
@@ -137,44 +130,24 @@ requested again. Its cost can exceed the selected budget; this does not allocate
 funds. Before/after shade, heat and albedo are engine outputs, and the displayed
 whole-network exposure has the engine's actual units.
 
-`st.cache_data` stores results in memory, returning copies. Keys include budget
-or preview selections plus resolved input paths, file sizes and modification
-times, including the engine source. No `engine.set_data_dir()`, monkey patch,
-shared-state mutation or file write occurs. The standalone engine took about
-10 seconds locally; uncached requests during headless software-rendered browser
-QA sometimes took minutes. Subsequent unchanged calls reuse results. Restart after
-teammates update source code so Python reloads their implementation. The preview
-is held per Streamlit session and is hidden for different selections/inputs.
+`st.cache_data` stores presentation results in memory, returning copies. Keys
+include selections, engine/file identity, content hashes, relevant modelling
+assumptions and the active correction version. The engine additionally caches
+budget-independent demand and candidate calculations. `use_cache=False` runs
+the same repaired arithmetic for comparison. Previews do not change `DATA_DIR`,
+cached tables or files. Changing Python code requires an app restart.
 
 ## Actual RM100,000 result
 
-Computed through `engine.priorities(100000)` against the current repository:
+The repaired `engine.priorities(100000)` selects **15 shade-tree links**, spends
+**RM99,920**, leaves **RM80**, and estimates **5,587.79224 person·°C·min/day**
+exposure saving. Modelled whole-network exposure is **71,673.247 → 66,085.455**
+(rounded). The full reproducible selection and before/after comparison are in
+[final_results.md](final_results.md) and versioned `data/results/` outputs.
 
-| Rank | Link | Fix | Cost RM | Daily exposure saving (person·°C·min/day) |
-|---:|---|---|---:|---:|
-| 1 | L0027 | shade_trees | 4,896 | 332.71770 |
-| 2 | L0026 | shade_trees | 7,216 | 469.58981 |
-| 3 | L0111 | shade_trees | 1,968 | 127.34437 |
-| 4 | L0777 | shade_trees | 22,144 | 1,432.88304 |
-| 5 | L0112 | shade_trees | 6,560 | 424.48125 |
-| 6 | L0789 | shade_trees | 6,464 | 405.98472 |
-| 7 | L0107 | shade_trees | 2,144 | 132.51638 |
-| 8 | L0787 | shade_trees | 11,168 | 576.49223 |
-| 9 | L0108 | shade_trees | 7,680 | 373.18316 |
-| 10 | L0202 | shade_trees | 4,624 | 210.61603 |
-| 11 | L0203 | shade_trees | 9,728 | 443.09532 |
-| 12 | L1081 | shade_trees | 4,528 | 206.02114 |
-| 13 | L1072 | shade_trees | 6,832 | 310.52046 |
-| 14 | L0543 | shade_trees | 3,632 | 116.31935 |
-
-Selected spending **RM99,584**; remaining **RM416**; summed daily saving
-**5,561.76496 person·°C·min/day**. Whole-network exposure reported by the engine:
-**71,056.713 → 65,494.948 person·°C·min/day** (rounded independently).
-These results change when shared inputs or engine assumptions change.
-
-At **RM10,000**, the engine selects L0027, L0111, L0107 and L0502 (shade trees),
-spending **RM9,904** and leaving **RM96**. At **RM0**, selection and spending are
-zero while the real network remains visible.
+At **RM10,000**, four links cost **RM9,904**, leaving **RM96**; saving is
+**594.03495 person·°C·min/day**. At RM0 there are no selections. These are
+modelled outputs, not construction recommendations validated in the field.
 
 ## Browser/manual verification checklist
 
@@ -185,12 +158,13 @@ zero while the real network remains visible.
 4. Set budget RM0: zero spending, no selections, network still visible. Set
    RM10,000: actual lower-budget selections and remaining funds must update.
 5. Restore RM100,000; preview L0027 / Shade trees. Expect cost RM4,896,
-   13:00 heat-index drop 3.4254°C and saving 332.718 person·°C·min/day.
+   13:00 heat-index drop 3.4157°C and saving 364.838 person·°C·min/day.
    Check hourly chart/table, shade percentages, albedo and whole-network totals.
 6. Select another link/fix. The previous preview must disappear; request a new
    preview. Budget metrics and original Heat Map must stay unchanged.
 7. Return to Cool Route, Heat Map and Sensors; exercise a control in each.
-8. Confirm `git diff -- engine.py heat_model data` is empty after using previews.
+8. Compare input checksums before/after previews; the repair itself intentionally
+   changes engine/heat source and adds versioned outputs, but previews write nothing.
 
 Automated tests cover real budgets, unit labels, rejected malformed allocations,
 preview isolation and protected-file hashes, CRS transformation, invalid geometry,
@@ -198,25 +172,9 @@ literal-string serialization, bounded widths and four-tab Streamlit interactions
 Unit tests alone do not establish browser rendering success. Browser screenshots
 and verification details are reported separately in the Phase 6 delivery.
 
-### Phase 6 verification record
+### Verification records
 
-The complete suite passed **134 tests** (105 previous tests plus 29 Planner
-tests) in 141.21 seconds, using the full command above. Windows required the
-owning account to reset the existing pytest temporary directory; no application
-test failed in the successful full run.
-
-Headless Edge with software WebGL was exercised against the actual local app:
-RM100,000 → RM0 → RM10,000 → RM100,000, selected-link hover, L0027 shade-tree
-preview, hourly chart/table and all four tabs. No page exceptions were reported;
-CARTO responses returned HTTP 200. The map, tooltip and preview screenshots were
-inspected. The same budget, hover, preview and four-tab sequence also completed
-in headless Chrome; no page exceptions were reported and CARTO returned HTTP 200.
-Chrome's map and hourly preview screenshots were inspected as well. This verifies
-desktop-size headless browser rendering, not a separate manual mobile-device test.
-Protected-file hashes matched before and after the browser previews.
-
-Local-only artifacts are under ignored `cache/`: `planner_browser_check.py`,
-`planner-edge-*.png`, `planner-chrome-*.png`, server logs and separate browser
-profiles. No QA helper or screenshot writes a shared data file. First uncached
-budget calculations were slow under this headless setup, so a spinner remains
-visible until real engine output is available; cached budget restoration was fast.
+The original Phase 6/7 results were historical, before the integration repairs.
+Current complete test counts, actual Edge/Chrome verification, screenshots and
+fresh/cached timings are recorded in [full_integration_repair.md](full_integration_repair.md).
+Unit tests alone do not establish browser rendering success.

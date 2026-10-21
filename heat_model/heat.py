@@ -14,11 +14,17 @@ For other modules:
 Run after shade.py:  .venv/Scripts/python heat_model/heat.py
 """
 
-from functools import lru_cache
 from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
+
+try:
+    from .effective import (clear_effective_cache, design_weather as _design_weather,
+                            effective_heat_at, load_effective_links)
+except ImportError:  # Keep the documented direct-script invocation working.
+    from effective import (clear_effective_cache, design_weather as _design_weather,
+                           effective_heat_at, load_effective_links)
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
@@ -36,29 +42,28 @@ def heat_score(air_temp_c, shade, sw_wm2, albedo, wind_ms):
 
 
 def design_weather():
-    """Design-day weather, one row per hour."""
-    weather = pd.read_csv(DATA / "weather.csv")
-    return weather[weather.day == "design"].set_index("hour")
+    """Validated 6 September 2026 weather; forecasts never enter this model."""
+    return _design_weather(DATA)
 
 
-@lru_cache(maxsize=1)
 def _links():
-    return gpd.read_file(DATA / "links.geojson")
+    return load_effective_links(DATA)
 
 
-def heat_at(hour):
+# Retained for existing integrations that explicitly clear the old reader cache.
+_links.cache_clear = clear_effective_cache
+
+
+def heat_at(hour, data_dir=None):
     """Links with `shade` and `heat` (°C) at that hour of the design day.
 
-    `heat` is sensor-corrected once sensor_correction.py has run; `heat_model` is
-    the uncorrected score.
+    `heat_model` is always the uncorrected index. `heat` uses an activated,
+    validated correction bundle, otherwise explicitly labelled baseline heat.
+    Corrections use simulated air offsets, never real field measurements.
     """
-    links = _links()
-    out = links[["link_id", "u", "v", "name", "length_m", "covered", "canopy", "surface", "albedo", "geometry"]].copy()
-    out["shade"] = links[f"shade_h{hour:02d}"]
-    out["heat_model"] = links[f"heat_h{hour:02d}"]
-    corrected = f"heat_corr_h{hour:02d}"
-    out["heat"] = links[corrected] if corrected in links else out["heat_model"]
-    return out
+    if data_dir is not None:
+        return effective_heat_at(hour, data_dir)
+    return effective_heat_at(hour, DATA, links=_links())
 
 
 def main():

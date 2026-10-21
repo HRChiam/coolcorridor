@@ -1,6 +1,13 @@
 # Phase 7 — team integration audit and QA
 
-Audit date: **21 October 2026**. Status: **PARTIAL; deployment is not approved**.
+> **Historical Phase 7 audit — superseded by the integration repair.** The
+> findings and original 162-pass/1-xfail record below are retained for traceability.
+> Current fixes, tests, browser evidence and deployment assessment are in
+> [full_integration_repair.md](full_integration_repair.md), with recomputed
+> [final_results.md](final_results.md). Original inputs remain unchanged; new
+> corrected/results artifacts are separately versioned. Deployment is not authorized.
+
+Audit date: **21 October 2026**. Historical status: **PARTIAL**.
 The app is a working, explicitly modelled design-day demonstration. A confirmed
 place-to-junction integration bug, mixed-date planner radiation and incomplete
 sensor-correction integration prevent a fully consistent production claim.

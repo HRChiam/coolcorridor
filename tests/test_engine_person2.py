@@ -37,7 +37,9 @@ def demo(tmp_path, monkeypatch):
         {"place_id": "home-1", "name": "Homes", "kind": "home", "households": 10, "geometry": Point(A)},
         {"place_id": "lrt-1", "name": "LRT", "kind": "transit", "households": 0, "geometry": Point(C)}
     ], crs="EPSG:4326").to_file(tmp_path / "places.geojson", driver="GeoJSON")
-    pd.DataFrame([{"hour": h, "shortwave_radiation": 800 if h < 18 else 200}
+    pd.DataFrame([{"day": "design", "date": "2026-09-06", "hour": h,
+                   "air_temp_c": 30., "rh_pct": 70., "wind_ms": 1.,
+                   "sw_wm2": 800 if h < 18 else 200}
                   for h in engine.HOURS]).to_csv(tmp_path / "weather.csv", index=False)
     (tmp_path / "interventions.csv").write_text((Path(__file__).resolve().parents[1] / "data" / "interventions.csv").read_text())
     return tmp_path

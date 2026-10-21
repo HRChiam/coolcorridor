@@ -1,0 +1,15 @@
+# Send only the reviewed deployment inputs to a container builder.
+**
+!Dockerfile
+!requirements.txt
+!requirements-person3-lock.txt
+!streamlit_app.py
+!deployment_package.py
+!deployment_check.py
+!.streamlit/
+.streamlit/**
+!.streamlit/config.toml
+!deployment/
+deployment/**
+!deployment/package_manifest.json
+!deployment/*.zip

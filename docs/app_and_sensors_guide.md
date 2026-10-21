@@ -12,7 +12,7 @@ from heat_model.heat import heat_at, design_weather, HOURS
 
 | Name | What it gives you |
 |---|---|
-| `heat_at(hour)` | GeoDataFrame, one row per walking link (1,491) at that hour (7 to 19). Columns: `link_id`, `u`, `v`, `name`, `length_m`, `covered`, `canopy`, `surface`, `albedo`, `geometry` (LineString, longitude/latitude), `shade` (0 to 1), `heat_model` (°C), `heat` (°C, sensor-corrected once the correction has run; until then equal to `heat_model`) |
+| `heat_at(hour)` | GeoDataFrame, one row per walking link (1,491) at that hour (7 to 19). Columns: `link_id`, `u`, `v`, `name`, `length_m`, `covered`, `canopy`, `surface`, `albedo`, `geometry` (LineString, longitude/latitude), `shade` (0 to 1), `heat_model` (°C), `heat` (°C, effective from a validated versioned correction, otherwise explicitly baseline) |
 | `design_weather()` | The day we model, **6 Sep 2026**, indexed by hour: `air_temp_c`, `rh_pct`, `sw_wm2` (sunlight), `wind_ms`, `sun_elev_deg`, `sun_azim_deg` |
 | `HOURS` | `range(7, 20)`, for the 7am to 7pm slider |
 
@@ -68,21 +68,28 @@ S03,L0375,2026-09-06T13:05:00+08:00,33.6,41,38.9,simulated
 ```
 
 - `link_id` must be one of the IDs above; the correction stops if it doesn't recognise one.
-- Timestamps: the correction only uses the hour of day, so the date part doesn't matter. Using 6 Sep 2026 keeps it consistent.
-- The two faults are fine. The correction uses each sensor's median reading per hour, so a short spike is ignored, and a silent half-hour just leaves fewer readings that hour.
+- Timestamps must be timezone-aware. Correction accepts only 6 September 2026, 07:00–19:00 Asia/Kuala_Lumpur, on the five-minute schedule. Other dates are excluded and counted; invalid timestamps fail validation.
+- Raw faults stay intact. The offline calibration excludes anomalies detected by the Dashboard residual rule before nearest-hour medians. Missing samples are never invented; zero-coverage hours explicitly retain baseline heat.
 
 ### Running the correction
 
-The correction only uses your file, so whoever makes `sensors_stream.csv` can run it straight away:
+The correction is an explicit offline operation; the app never runs it:
 
 ```powershell
-.venv\Scripts\python.exe heat_model\sensor_correction.py
+.venv\Scripts\python.exe -B -m heat_model.sensor_correction --activate
 ```
 
-- It prints the **Sensor correction** results number: the model's error against the sensors, before and after correction, in °C.
-- It writes the corrected heat into `data/links.geojson` (after that, `heat_at()` returns corrected `heat`) and per-sensor errors to `data/sensor_validation.csv`.
-- **Only one person runs it and commits those two files.** If two people do, git will report a conflict on `links.geojson`.
-- Report it honestly: the simulator adds a fixed offset per site, so the correction is bound to learn it. The drop in error shows the method works; it isn't evidence of real-world accuracy.
+It creates/verifies an immutable `data/corrections/<version>/` containing all
+19,383 corrected link/hour values, sensor offsets, excluded-sample audit,
+previous-hour validation and a provenance manifest. `current.json` selects a
+validated version. Existing versions and a different active pointer are not
+silently replaced. The frozen GeoJSON and raw sensor CSV remain unchanged.
+
+The shared reader validates input hashes, selected design weather, complete
+coverage and all output hashes before making effective heat available to **Heat
+Map, Cool Route and Planner together**. Labels clearly say SIMULATED. The error
+reduction demonstrates recovery of synthetic offsets, not field accuracy.
+See [full_integration_repair.md](full_integration_repair.md).
 
 ## Part 2: the app
 
@@ -111,7 +118,7 @@ These come from Person 2's `engine.py` (`route()`, `priorities()`, `apply_fix()`
 
 ## Things to know
 
-- `heat_at` reads `links.geojson` once and caches it. After the heat model or the correction re-runs, restart the app.
+- `heat_at` caches validated snapshots using content hashes and correction versions; data changes invalidate caches. Restart when Python implementation code changes.
 - Don't edit `links.geojson` by hand. The heat model's scripts rewrite it.
 - Link IDs are frozen. Everything (sensors, flows, fixes) is keyed by `link_id`.
 - `data/coverage_map.html` and `data/tagging_map.html` are working maps on Person 1's machine only, not in the repo.

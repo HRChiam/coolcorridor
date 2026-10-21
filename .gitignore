@@ -3,5 +3,9 @@ __pycache__/
 .pytest_cache/
 .pytest_coolcorridor_temp/
 cache/
+.streamlit/secrets.toml
+.env
+.env.*
+!.env.example
 data/coverage_map.html
 data/tagging_map.html

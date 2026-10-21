@@ -1,7 +1,6 @@
 # Cool Route local app
 
-The app implements the real Cool Route tab only. Heat Map, Sensors and Planner
-tabs are outside this phase. `app.py` renders the Streamlit controls and results;
+The four-tab app includes Cool Route, Heat Map, Sensors and Planner. `app.py` renders the Streamlit controls and results;
 `cool_route.py` handles place labels, calling the existing engine, validating
 results and creating pydeck layers. No route or model output is written.
 
@@ -39,8 +38,9 @@ The map draws returned link geometries as paths, not straight lines between
 places. Shortest is a wider orange line, coolest is a narrower green line.
 Where both use the same link, the orange border remains visible. Each route can
 be hidden independently. Hover on a route for its metrics, and drag/zoom the map.
-O and D mark the recorded place coordinates; the engine snaps each place to a
-walking-network junction, so markers need not lie exactly on the route endpoints.
+O and D mark the recorded place coordinates; the engine uses the authoritative exported `node_id` and falls back to validated
+coordinates only when that ID is absent. Place markers need not be exactly at
+the recorded walking junction.
 
 ## Metrics and interpretation
 
@@ -61,10 +61,10 @@ With the current committed inputs, the default 14:00 comparison is:
 
 | Metric | Shortest | Coolest |
 |---|---:|---:|
-| Distance (m) | 796.5 | 797.7 |
-| Walking time (min) | 11.062 | 11.079 |
-| Sun exposure (min) | 9.291 | 8.466 |
-| Heat exposure (degree-C-min) | 100.914 | 94.132 |
+| Distance (m) | 824.5 | 826.3 |
+| Walking time (min) | 11.451 | 11.476 |
+| Sun exposure (min) | 9.684 | 8.466 |
+| Heat exposure (degree-C-min) | 101.404 | 92.121 |
 
 These numbers are documented examples, not hardcoded UI results. The app calls
 the engine every time. The replay date is 6 September 2026, not live weather.
@@ -77,8 +77,8 @@ missing geometry, invalid metrics or absent results produce messages instead
 of fake routes. If one route succeeds, its map and table remain available; the
 two-route comparison is withheld. Failed selections clear previous results.
 When both paths match, the app explains that no cooler alternative was found
-within the allowed detour at the chosen time. At 07:00, exposure is zero in the
-current data and shortest/coolest normally coincide.
+within the allowed detour at the chosen time. The effective heat determines
+whether a cooler route exists; morning values are no longer assumed uniform.
 
 ## Verification
 
@@ -108,13 +108,20 @@ For a manual browser check:
 4. Change the origin to FamilyMart and verify the route updates.
 5. Set the same origin and destination and confirm the warning replaces the map.
 
-## Integration limits retained from the existing engine
+## Shared effective heat and junctions
 
-This phase does not change `engine.py`, `heat_model/`, or shared model outputs.
-The current engine reads `heat_hXX` rather than `heat_corr_hXX`; generated sensor
-readings do not automatically influence this tab. Corrected-heat integration,
-planner weather selection and shade-gain differences still require coordination
-with Persons 1 and 2. The app does not bypass or silently repair their calculations.
+Route exposure uses the same versioned effective heat as Heat Map and Planner.
+Labels identify corrected **SIMULATED** calibration or explicit baseline fallback.
+Each hour is on 6 September 2026 Asia/Kuala_Lumpur; forecast weather is excluded.
+Missing/inconsistent correction artifacts fail validation instead of mixing
+sources. Viewing the app never runs correction or modifies shared files.
+
+All 66 exported place IDs are resolved through one engine resolver, including
+P066 → `node:8141631184`. Junction coordinates are inferred from common incident
+geometry endpoints, independent of line orientation. Invalid supplied node IDs
+raise errors; absent IDs may use coordinate fallback only when graph coordinates
+are reliable. Recalculated values above supersede the previous snapping-based
+results. See [final results](final_results.md) and [repair QA](full_integration_repair.md).
 
 ## Map rendering regression: purple rectangle
 

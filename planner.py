@@ -12,7 +12,8 @@ import streamlit as st
 
 import engine
 from cool_route import _coordinate
-from app_data import design_day, validate_heat_weather, shared_directory_matches
+from app_data import design_day, validate_heat_weather, shared_directory_matches, heat_source_label
+from heat_model.effective import input_signature as heat_input_signature
 
 BENEFIT_UNIT = "person·°C·min/day"
 FIX_LABELS = {"shade_trees": "Shade trees", "shade_sail": "Shade sail",
@@ -35,7 +36,8 @@ def input_signature():
     """Invalidate read-only app caches when engine inputs change; no global setters."""
     paths = [Path(engine.__file__)] + [Path(engine.DATA_DIR) / name for name in
               ("links.geojson", "places.geojson", "weather.csv", "interventions.csv")]
-    return tuple((str(p.resolve()), p.stat().st_mtime_ns, p.stat().st_size) for p in paths)
+    return (tuple((str(p.resolve()), p.stat().st_mtime_ns, p.stat().st_size) for p in paths),
+            heat_input_signature(engine.DATA_DIR))
 
 
 def load_planning_data(data_dir=None):
@@ -228,8 +230,7 @@ def render_planner():
     except ERRORS as exc:
         st.error(f"Planner unavailable: {exc}")
         return
-    st.caption("Baseline: uncorrected model heat (heat_h07–heat_h19). The planning engine currently ignores "
-               "heat_corr columns even if present. Sensor corrections are not applied by this tab.")
+    st.caption(heat_source_label(table.attrs))
     spent, remaining, count = st.columns(3)
     spent.metric("Selected investment", f"RM {summary['spent']:,.2f}")
     remaining.metric("Remaining budget", f"RM {summary['remaining']:,.2f}")
@@ -256,9 +257,9 @@ def render_planner():
                  f"{engine.COMFORT_C:g}°C comfort line across 07:00–19:00. Units are {BENEFIT_UNIT}, "
                  "not minutes or person-minutes. The engine's person_min_saved_day field uses this exposure unit. "
                  "Heat-index drop refers only to 13:00; it is not an all-day average.")
-        st.write("Radiation caveat: the current engine averages weather.csv rows by hour, including design-day "
-                 "and forecast rows. Baseline heat is from the design day. Coordinate weather filtering and "
-                 "corrected-heat support with Person 2 before treating these projections as design-day calibrated.")
+        st.write("Radiation uses exactly one validated design-day record per hour on 6 September 2026. "
+                 "Shade gains reduce the remaining sunlit fraction: after = before + (1 − before) × gain. "
+                 "Intervention previews retain the effective model's sensor offset. CSV gains and costs are unchanged.")
         st.dataframe(fixes, hide_index=True, width="stretch")
     st.subheader("Read-only intervention preview")
     st.caption("Explore one link independently of the budget selection. Previewing does not add it to the plan "

@@ -2,8 +2,8 @@
 
 The tab displays the actual walking network around Putra Heights LRT Station.
 It opens at 14:00 and supports every whole hour from 07:00 to 19:00. All values
-come from committed project inputs; no model-generation, correction, routing
-engine modification or shared-data write occurs in this phase.
+come from repository inputs and a validated offline correction bundle. App
+rendering never generates corrections or writes shared data.
 
 ## Run and test
 
@@ -31,7 +31,7 @@ the existing engine, sensor simulator and Cool Route suites.
 | Input/interface | Use |
 |---|---|
 | `heat_model.heat.heat_at(hour)` | Hourly heat, uncorrected heat, shade, canopy, covered status, surface, albedo and actual walking geometry |
-| `data/links.geojson` | Read-only verification of corrected-column availability |
+| `data/links.geojson` | Frozen baseline network, shade, surface attributes and real geometry |
 | `heat_model.heat.design_weather()` | The replay date, currently 6 September 2026 |
 | `data/sensor_links.csv` | All eight sensor IDs, link mappings and recorded longitude/latitude |
 | `data/sensors_stream.csv` | Synthetic air temperature, humidity and surface readings |
@@ -45,22 +45,18 @@ temperatures are hardcoded into the visualization.
 
 ## Heat and correction labels
 
-The plotted value is `heat_at(hour).heat`; `heat_model` remains available in link
-hover text. If complete `heat_corr_hXX` columns exist for the selected hour, the
-app labels the display sensor-corrected. If those columns are absent, it labels
-the display **Uncorrected model heat**. Incomplete corrected columns cause a
-clear error requiring coordination, rather than a silent mixture of sources.
+The plotted value is `heat_at(hour).heat`; `heat_model` remains the uncorrected
+model in hover text. The shared reader validates a complete versioned correction
+bundle selected by `data/corrections/current.json`, including hashes, design date,
+all links/hours and baseline agreement. The same effective heat feeds the engine
+and Planner. A damaged, partial or stale active bundle fails clearly; no bundle
+or zero usable sensor coverage produces explicitly labelled baseline heat.
 
-At implementation time, no corrected columns exist. Generating sensor readings
-alone does not apply a correction. Person 1's reader caches the link file, so
-restart the app after teammates regenerate shared model outputs. Do not run the
-correction or heat scripts merely to view this tab.
-The adapter checks the displayed heat against the file's selected-hour source
-column. Phase 7 also checks geometry, shade, surface attributes, baseline heat
-and design-weather coherence. If the reader has older cached values, it requests
-a restart instead of displaying an inconsistent snapshot. It never clears or
-modifies Person 1's cache. If corrected data arrives before Person 2 integrates
-it, a warning explains that Route and Planner still use baseline heat.
+The active correction is derived offline from **SIMULATED** air readings. A
+corrected source label identifies the bundle, not proof every link changed:
+links outside all sensor influence areas retain zero correction. It does not
+establish real-world heat accuracy. Input content and version keys invalidate
+cached data. Baseline heat is still checked against the strict design weather.
 
 The heat score is a simplified index combining air, sun, shade, wind and surface
 reflectivity. Its units are expressed in degrees C, but it is **not measured air
@@ -81,9 +77,10 @@ these design choices, without scaling to the current hour's minimum/maximum:
 | 44°C | 165, 0, 38 |
 
 The visible gradient uses the same stops. Values outside 26–44°C use the nearest
-end color; hover text retains their actual numeric values. At 07:00 the current
-network is uniformly 26.38°C, so it should appear blue. At 14:00 the hottest
-links reach 43.08°C and appear red.
+end color; hover text retains actual numeric values. At 07:00 the baseline is
+26.38°C, but simulated corrections introduce spatial differences. Some corrected
+afternoon links exceed 44°C and use the red endpoint color without truncating
+their tooltip values. See final_results.md for current summaries.
 
 Overlay switches add outlines underneath the central heat-colored paths:
 
@@ -149,17 +146,17 @@ In Chrome and Edge:
 2. Hover links for ID, index, shade, covered status, canopy, surface and albedo.
    Hover sensors for SIMULATED air/RH/surface values and timestamps.
 3. Enable each outline and then all three; check that central heat colors remain.
-4. Move to 07:00: links should become blue and the average should be 26.38°C,
+4. Move to 07:00: links should become blue, with corrected spatial variation,
    while legend endpoints stay unchanged. Check 19:00 as well.
 5. At 12:00, inspect S02's stale 11:55 sample. Pan and zoom to check marker sizes.
 6. Return to Cool Route; confirm the real default routes and 14:00 metrics still
    work, independently of the Heat Map slider.
 
-## Remaining integration dependencies
+## Remaining limitations
 
-The earlier shared-interface issue remains: Person 2's engine reads `heat_hXX`,
-while Person 1's heat reader prefers corrected columns when available. Both
-currently show the same uncorrected baseline. Future correction integration
-requires agreement with Persons 1 and 2; this tab does not alter their code.
-Planner and Sensors are now available. See [the integration QA handoff](integration_qa.md)
-for the current junction-snapping, radiation and correction dependencies.
+The integration gaps found in Phase 7 are repaired; see
+[full integration repair](full_integration_repair.md). Scientific limits remain:
+synthetic offsets, estimated canopy/surfaces, eight-site spatial coverage, a
+simplified heat index and no field validation. Marker snapshots show only causal
+raw readings; offline centred calibration windows can include later samples and
+must not be described as live nowcasting.

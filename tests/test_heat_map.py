@@ -23,16 +23,18 @@ def heat_tab(at):
     return next(tab for tab in at.tabs if tab.label == "Heat Map")
 
 
-def test_real_network_matches_hourly_data_and_is_uncorrected(links):
+def test_real_network_matches_baseline_and_versioned_correction(links):
     payload = json.loads((ROOT / "data/links.geojson").read_text(encoding="utf-8"))
     props = {f["properties"]["link_id"]: f["properties"] for f in payload["features"]}
     assert len(links) == 1491
     assert links.crs.to_epsg() == 4326
-    assert not links.attrs["sensor_corrected"]
+    assert links.attrs["sensor_corrected"]
+    assert links.heat_source.eq("corrected").all()
+    assert links.sensor_source.eq("simulated").all()
     for link in links.itertuples():
-        assert link.heat == props[link.link_id]["heat_h14"]
+        assert link.heat_model == props[link.link_id]["heat_h14"]
         assert link.shade == props[link.link_id]["shade_h14"]
-    assert (links.heat == links.heat_model).all()
+    assert (links.heat != links.heat_model).any()
 
 
 def test_colors_use_same_fixed_scale_for_every_hour():
@@ -147,23 +149,18 @@ def test_serialized_layers_preserve_purple_map_fix(links):
     assert 2 < deck["initialViewState"]["latitude"] < 4
 
 
-def test_correction_availability_is_labelled_without_writing_shared_data(monkeypatch, tmp_path, links):
-    payload = json.loads((ROOT / "data/links.geojson").read_text(encoding="utf-8"))
-    for feature in payload["features"]:
-        feature["properties"]["heat_corr_h14"] = feature["properties"]["heat_h14"] + .5
-    (tmp_path / "links.geojson").write_text(json.dumps(payload), encoding="utf-8")
-    corrected = links.copy()
-    corrected["heat"] += .5
+def test_baseline_fallback_and_unversioned_correction_rejection(monkeypatch, tmp_path):
+    import shutil
+    shutil.copy2(ROOT / "data/links.geojson", tmp_path / "links.geojson")
     monkeypatch.setattr(heat_map, "DATA", tmp_path)
-    monkeypatch.setattr(heat_map, "heat_at", lambda hour: corrected)
-    assert heat_map.load_heat_data(14).attrs["sensor_corrected"]
-    monkeypatch.setattr(heat_map, "heat_at", lambda hour: links)
-    with pytest.raises(ValueError, match="cached values"):
-        heat_map.load_heat_data(14)
-    monkeypatch.setattr(heat_map, "heat_at", lambda hour: corrected)
-    del payload["features"][0]["properties"]["heat_corr_h14"]
+    baseline = heat_map.load_heat_data(14)
+    assert not baseline.attrs["sensor_corrected"]
+    assert baseline.heat_source.eq("baseline").all()
+    np.testing.assert_array_equal(baseline.heat, baseline.heat_model)
+    payload = json.loads((tmp_path / "links.geojson").read_text(encoding="utf-8"))
+    payload["features"][0]["properties"]["heat_corr_h14"] = 40.
     (tmp_path / "links.geojson").write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(ValueError, match="incomplete"):
+    with pytest.raises(ValueError, match="(?i)unversioned|embedded"):
         heat_map.load_heat_data(14)
 
 
@@ -173,7 +170,7 @@ def test_heat_tab_updates_hour_colors_and_leaves_route_state_unchanged():
     assert at.select_slider(key="heat_hour").value == 14
     tab = heat_tab(at)
     assert tab.get("deck_gl_json_chart")
-    assert any("Uncorrected model heat" in c.value for c in tab.caption)
+    assert any("Sensor-corrected model heat using SIMULATED" in c.value for c in tab.caption)
     assert any("SIMULATED" in message.value for message in tab.info)
     expected = heat_map.heat_summary(heat_map.load_heat_data(14))
     assert tab.metric[0].value.startswith(f"{expected['average']:.2f}")
@@ -181,11 +178,12 @@ def test_heat_tab_updates_hour_colors_and_leaves_route_state_unchanged():
     afternoon_paths = next(layer["data"] for layer in afternoon["layers"] if layer["id"] == "heat-network")
     at.select_slider(key="heat_hour").set_value(7).run()
     assert not at.exception
-    assert heat_tab(at).metric[0].value.startswith("26.38")
+    morning_data = heat_map.load_heat_data(7)
+    assert heat_tab(at).metric[0].value.startswith(f"{morning_data.heat.mean():.2f}")
     morning = json.loads(heat_tab(at).get("deck_gl_json_chart")[0].proto.json)
     morning_paths = next(layer["data"] for layer in morning["layers"] if layer["id"] == "heat-network")
     assert len(morning_paths) == len(afternoon_paths) == 1491
-    assert {tuple(p["color"]) for p in morning_paths} == {tuple(heat_map.heat_color(26.38))}
+    assert [p["color"] for p in morning_paths] == [heat_map.heat_color(value) for value in morning_data.heat]
     assert [p["color"] for p in afternoon_paths] != [p["color"] for p in morning_paths]
     assert at.select_slider(key="route_hour").value == 14
     at.select_slider(key="heat_hour").set_value(19).run()
@@ -199,7 +197,7 @@ def test_heat_tab_updates_hour_colors_and_leaves_route_state_unchanged():
 
 
 def test_missing_heat_does_not_break_cool_route(monkeypatch):
-    monkeypatch.setattr(heat_map, "heat_at", lambda h: (_ for _ in ()).throw(FileNotFoundError("Missing model")))
+    monkeypatch.setattr(heat_map, "heat_at", lambda h, **kwargs: (_ for _ in ()).throw(FileNotFoundError("Missing model")))
     at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
     assert not at.exception
     assert any("Heat network unavailable" in message.value for message in at.error)

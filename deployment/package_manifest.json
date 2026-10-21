@@ -1,0 +1,126 @@
+{
+  "content_version": "7e60744e872603ce7e33c3fa7ad4148691a40f580b3f42d77e7e7984ebef9fd8",
+  "correction_version": "v1-20260906-2487cdd6cca7ef71",
+  "design_date": "2026-09-06",
+  "files": {
+    "app.py": {
+      "bytes": 10801,
+      "sha256": "eca636ccb87350b0ee5a6c623f72ee90ac11682c6b676fcf3f72315297656001"
+    },
+    "app_data.py": {
+      "bytes": 1972,
+      "sha256": "3483889ebf528e024e8258c72ec01d010e677c4cc3ea3df20a9a8da589082b5d"
+    },
+    "config/sensor_simulation.json": {
+      "bytes": 283,
+      "sha256": "71746dd16ef0a40033e56b85d290c777239a98faa6866dfe8f14b7c754d00a07"
+    },
+    "cool_route.py": {
+      "bytes": 10094,
+      "sha256": "e0010028fb5b493768aa58224d305dd746ba041d806dd6bde7445e2446b0b753"
+    },
+    "data/corrections/current.json": {
+      "bytes": 165,
+      "sha256": "46c78dc9529d127b5449d23684f42f49ebd2322a052f64b6591ce05e59b87a8f"
+    },
+    "data/corrections/v1-20260906-2487cdd6cca7ef71/corrected_heat.csv": {
+      "bytes": 870446,
+      "sha256": "966fc035e799e5f1383ca73536dfb049430642527f65af067855c3ce72ef2242"
+    },
+    "data/corrections/v1-20260906-2487cdd6cca7ef71/manifest.json": {
+      "bytes": 3438,
+      "sha256": "5956f7aa222cb3701f6b6531701a8c892d1245a7ace1709ef57a0b2b8e079e36"
+    },
+    "data/corrections/v1-20260906-2487cdd6cca7ef71/rejected_samples.csv": {
+      "bytes": 222,
+      "sha256": "a00cc4b744ed13da3abb3d311bc531a122bc23c7bc6b446c7f8417c55e87d0dc"
+    },
+    "data/corrections/v1-20260906-2487cdd6cca7ef71/sensor_offsets.csv": {
+      "bytes": 5489,
+      "sha256": "1d066f3273127629952a54a974d6b180d872047b83cd154b4d3591e3daa856fb"
+    },
+    "data/corrections/v1-20260906-2487cdd6cca7ef71/sensor_validation.csv": {
+      "bytes": 6703,
+      "sha256": "cca210fcff6afbf3ab29b76947fe611bf580eeedfacd314c4323ce5a0f64b927"
+    },
+    "data/interventions.csv": {
+      "bytes": 474,
+      "sha256": "8eb4b7d1e6683cab565d3487f047b3003a536caef5fe572f37560b38f9b2f6af"
+    },
+    "data/links.geojson": {
+      "bytes": 1516313,
+      "sha256": "e4f3251ce02b4ff835815be9bd126e07bc868a30f0dcf465f8618556083e2d8f"
+    },
+    "data/places.geojson": {
+      "bytes": 17686,
+      "sha256": "49b9a77ef614d028465108396099f89919f16d6abe1cfba99410b3d897e87919"
+    },
+    "data/sensor_links.csv": {
+      "bytes": 1372,
+      "sha256": "27033510ad9f071f867d0c05b890e946ceb358194e134890857c976829b8b5a7"
+    },
+    "data/sensors_stream.csv": {
+      "bytes": 77386,
+      "sha256": "bdf932b11b4d93ba598a2853577a709e195f9e833f5f26cdbc7e8aa46cf83943"
+    },
+    "data/weather.csv": {
+      "bytes": 1467,
+      "sha256": "4bcdf29d1b2df8ee0d5869251980b86c84bf5497953384a729e6f9d60533bd65"
+    },
+    "engine.py": {
+      "bytes": 40161,
+      "sha256": "cf10cc7897a685192cc3f46b3d50742fcdb99f34235e28001989897d7be34e60"
+    },
+    "heat_map.py": {
+      "bytes": 11889,
+      "sha256": "218f7d17aa88244f090462d4b800eb8a66afb3297187eb6828fb2c544eeb4dff"
+    },
+    "heat_model/effective.py": {
+      "bytes": 15716,
+      "sha256": "b748dac30cee67e9bd7e8b22cc0e9367f29d76a9f9bec611dc1b93e4ddbcc581"
+    },
+    "heat_model/heat.py": {
+      "bytes": 4509,
+      "sha256": "c2063b4561ee1fde03730eab379c0a085df174746be6369bca05c8d45c13d078"
+    },
+    "heat_model/sensor_correction.py": {
+      "bytes": 18141,
+      "sha256": "2bb40ff312daf5c9755fdf404052743ad5c3de9eda98ff880b9fa1b2841d17f6"
+    },
+    "planner.py": {
+      "bytes": 17487,
+      "sha256": "7ee33586f2699b3b706d7fab735e4908791d84a964353d05bdf690aa1a7ab0fe"
+    },
+    "sensors_dashboard.py": {
+      "bytes": 20461,
+      "sha256": "6335ba43bfc8077e0bc5f4058beeb9473b8d8d76f2769949eb6fa965c2e45ca1"
+    },
+    "simulate_sensors.py": {
+      "bytes": 11784,
+      "sha256": "951d8b67a5a370315e79ee5309ddb060be7153dc55fe1155acb1f661d95c07f2"
+    }
+  },
+  "heat_source": "corrected",
+  "hours": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "link_count": 1491,
+  "package": "coolcorridor-7e60744e872603ce7e33.zip",
+  "package_bytes": 265086,
+  "package_sha256": "e472cbce07c56c5a7217f15f220dc86cfc4ad752c12680a5fc20f5f597d091a0",
+  "schema_version": 1,
+  "sensor_source": "simulated",
+  "unpacked_bytes": 2664459
+}

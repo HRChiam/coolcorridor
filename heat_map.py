@@ -1,18 +1,16 @@
 """Read-only heat-network and replay-sensor preparation for the Heat Map tab."""
 
-import json
 import math
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 import pydeck as pdk
 from pydeck.types import String
 
 from cool_route import _coordinate
 from app_data import design_day, validate_heat_weather
-from heat_model.heat import HOURS, TZ, design_weather, heat_at
+from heat_model.heat import HOURS, TZ, heat_at
 
 DATA = Path(__file__).resolve().parent / "data"
 HEAT_MIN, HEAT_MAX = 26.0, 44.0
@@ -35,9 +33,9 @@ def heat_color(value):
 
 
 def load_heat_data(hour):
-    """Use Person 1's public interface; inspect column availability for honest labels."""
+    """Use the validated shared heat interface, retaining its real source metadata."""
     validate_hour(hour)
-    links = heat_at(hour).copy()
+    links = heat_at(hour, data_dir=DATA).copy()
     if links.empty or links.crs is None:
         raise ValueError("Heat network must be nonempty and have a coordinate reference system")
     links = links.to_crs(epsg=4326)
@@ -53,41 +51,17 @@ def load_heat_data(hour):
     if (links.length_m <= 0).any() or not links[["shade", "canopy", "albedo"]].apply(lambda c: c.between(0, 1).all()).all():
         raise ValueError("Link lengths must be positive; shade, canopy and albedo must be in 0..1")
     links["covered"] = links.covered.map(lambda v: str(v).lower() in ("true", "yes", "1"))
-    payload = json.loads((DATA / "links.geojson").read_text(encoding="utf-8"))
-    corrected_col = f"heat_corr_h{hour:02d}"
-    corrected = [corrected_col in f["properties"] for f in payload["features"]]
-    if any(corrected) and not all(corrected):
-        raise ValueError("Corrected heat columns are incomplete; coordinate the shared output with Person 1")
-    links.attrs["sensor_corrected"] = bool(corrected) and all(corrected)
-    raw = pd.DataFrame([f["properties"] for f in payload["features"]]).set_index("link_id")
-    source_column = corrected_col if links.attrs["sensor_corrected"] else f"heat_h{hour:02d}"
-    if (set(raw.index) != set(links.link_id)
-            or not np.allclose(links.heat.to_numpy(), raw.loc[links.link_id, source_column].to_numpy(dtype=float),
-                               rtol=0, atol=1e-9)):
-        raise ValueError("Heat reader contains cached values from an older file. Restart the app to reload shared heat data")
-    # Person 1 caches the entire GeoDataFrame. Unchanged heat does not establish
-    # that its geometry, shade, baseline or surface attributes are still current.
-    fresh = gpd.read_file(DATA / "links.geojson").to_crs(4326).set_index("link_id").loc[links.link_id]
-    current = links.set_index("link_id")
-    stale = not np.allclose(current.heat_model, fresh[f"heat_h{hour:02d}"], rtol=0, atol=1e-9)
-    for field in ("length_m", "canopy", "albedo"):
-        stale |= not np.allclose(current[field], fresh[field], rtol=0, atol=1e-9)
-    stale |= not np.allclose(current.shade, fresh[f"shade_h{hour:02d}"], rtol=0, atol=1e-9)
-    for field in ("covered", "surface", "name", "u", "v"):
-        stale |= not current[field].fillna("").astype(str).equals(fresh[field].fillna("").astype(str))
-    stale |= not current.geometry.geom_equals_exact(fresh.geometry, tolerance=1e-9).all()
-    if stale:
-        raise ValueError("Heat reader contains cached attributes or geometry from an older file. Restart the app to reload shared heat data")
-    # Verify weather when present in this source bundle. The app's replay-date
-    # reader independently requires weather before displaying the Heat Map.
+    # The shared reader validates a complete, hashed correction bundle and
+    # reloads when input content changes. Baseline formula checks remain separate.
+    links.attrs["sensor_corrected"] = links.attrs.get("heat_source") == "corrected"
     if (DATA / "weather.csv").exists():
-        validate_heat_weather(fresh, design_day(DATA / "weather.csv"), (hour,))
+        validate_heat_weather(links, design_day(DATA / "weather.csv"), (hour,))
     return links
 
 
 def replay_date(hour):
     validate_hour(hour)
-    weather = design_weather()
+    weather = design_day(DATA / "weather.csv")
     if weather.date.nunique() != 1 or hour not in weather.index:
         raise ValueError("Design weather must contain a single replay date and the selected hour")
     return str(weather.loc[hour, "date"])

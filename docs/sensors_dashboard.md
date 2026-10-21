@@ -158,7 +158,8 @@ state at 12:10, the full-day gap, and Active recovery at 12:30. The corrected
 local-time axis labels and S01 spike were visually inspected in both browsers.
 Screenshots and the local browser helper are under ignored `cache/`, including
 `map-phase5-edge-spike-charts.png` and `map-phase5-chrome-outage-charts.png`.
-The final automated suite passed 105 tests, including all 75 previous tests.
+The historical Phase 5 suite passed 105 tests, including all 75 previous tests.
+Current complete integration results are in [full_integration_repair.md](full_integration_repair.md).
 
 Manual demonstration checks:
 
@@ -172,7 +173,14 @@ Manual demonstration checks:
 Known limitations are the provisional detector/freshness thresholds, no automatic
 CSV/config provenance check, synthetic-only data, and internet-dependent CARTO
 basemap tiles. No live streaming, automatic correction or real-sensor claims are
-made. Planner is now available; see [the integration QA handoff](integration_qa.md)
+made. Planner is now available; see [the full integration repair](full_integration_repair.md)
 for current system-wide limitations. Phase 7 validates simulation configuration
 before creating fault annotations: invalid configuration produces a warning and
 omits those annotations while actual CSV-based detection remains operational.
+
+The offline correction pipeline now uses the same causal air-residual anomaly
+detector before aggregation, independently of fault annotations. It writes a
+versioned audit and calibrates the model heat index; this dashboard continues to
+show the untouched raw simulated air, humidity and surface readings. In particular,
+S01's spike and S02's outage remain visible. Calibration uses centred hourly
+windows offline; dashboard snapshots and statuses remain causal at replay time.

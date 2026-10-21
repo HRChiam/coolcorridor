@@ -5,6 +5,32 @@ LRT. The repository contains the heat model (Person 1), routing and planner
 (Person 2), and the synthetic sensor generator and Streamlit + pydeck Cool Route,
 Heat Map, Sensors and Planner tabs (Person 3).
 
+## Deployment preparation — awaiting approval
+
+Use **`streamlit_app.py` as the cloud entrypoint**. It verifies and extracts the
+reviewed binary package, preserving the exact source/data bytes required by the
+correction manifest even after Linux Git checkout. It runs the same real app;
+no model or sensor regeneration occurs. `app.py` below remains the development
+entrypoint.
+
+```powershell
+.venv\Scripts\python.exe -B deployment_package.py
+.venv\Scripts\python.exe -B deployment_check.py --app-test
+.venv\Scripts\python.exe -B -m streamlit run streamlit_app.py --server.address=127.0.0.1 --server.port=8501
+```
+
+The ZIP is **265,086 bytes**, containing 24 runtime files and the active corrected
+bundle. Commit/push/deployment have **not** been authorized or performed. Start
+with [deployment readiness](docs/deployment_readiness.md), follow the
+[deployment guide](docs/deployment_guide.md) after approval, and rehearse the
+[three-minute demo](docs/hackathon_demo.md). Community Cloud requires the owner
+to authorize private-repository access and select Python 3.13. Linux wheel
+availability is checked; actual Linux/cloud execution remains a target-host test.
+
+Do not run data-generation scripts to make startup work, upload ignored caches,
+or publish a different model silently. See `deployment/package_manifest.json`
+for every required runtime path, size and SHA-256.
+
 ## Launch the app locally
 
 From the repository root in PowerShell, using the existing `.venv`:
@@ -28,8 +54,10 @@ Move the replay-hour slider from 07:00 to 19:00; the heat legend stays fixed at
 26–44°C. Optional outlines highlight covered walkways, canopy and shade. Hover
 links and the eight sensor markers for details. Sensor readings are explicitly
 **SIMULATED**, selected at or before the chosen replay time; stale and missing
-readings are labelled. Current heat is **uncorrected model heat**, not measured
-air temperature. All tabs have independent replay controls.
+readings are labelled. All three model tabs share the same validated effective
+heat index, using offline **SIMULATED** sensor corrections when activated, with
+explicit baseline fallback. This is not measured air temperature. All tabs have
+independent replay controls.
 
 Read [the Heat Map guide](docs/heat_map_app.md) for source data, aggregation,
 overlay definitions, limitations and visual verification steps. No additional
@@ -48,30 +76,46 @@ See [the Sensors Dashboard guide](docs/sensors_dashboard.md) for detection rules
 configured fault annotations, provenance limitations and verification steps.
 
 The fourth tab, **Planner**, calls Person 2's actual `engine.priorities(budget_rm)`.
-Start at **RM100,000** to see 14 selected shade-tree interventions costing
-**RM99,584**, leaving **RM416**. Estimated daily exposure saving is
-**5,561.765 person·°C·minutes/day**, using uncorrected model heat and assumed
-walking demand. Change the budget to recalculate the greedy allocation; hover
-the highlighted walking links for costs and benefits. Select a link and
-improvement, then press **Preview intervention** for real engine hourly
-before/after projections. Previews are independent of the selected budget plan
-and do not write data. The standalone engine took about 10 seconds locally;
-uncached app requests can take longer, especially during browser automation.
-Unchanged inputs are cached in memory.
+Start at **RM100,000** to see actual selected interventions, remaining budget
+and modelled daily exposure savings. Change the budget to recalculate the greedy
+allocation; hover highlighted links for costs and benefits. Select a link and
+improvement, then press **Preview intervention** for real hourly before/after
+projections. Previews do not change data. Demand and candidate calculations are
+reused across budgets using content and correction-version keys.
 
-See [the Planner guide](docs/planner_app.md) for the actual algorithm, cost
-assumptions, unit definitions, current weather/corrected-heat limitations and
-verification steps. The existing environment and launch command support all
-four tabs; no additional dependencies are needed.
+See [the Planner guide](docs/planner_app.md) and
+[recomputed results](docs/final_results.md) for actual numbers, units and timings.
+The historical Phase 7 results were superseded by the integrated repair:
+authoritative place IDs, orientation-independent junction coordinates, strict
+6 September 2026 weather, a versioned correction pipeline, and user-approved
+proportional shade gains. [Repair and QA details](docs/full_integration_repair.md)
+explain the algorithms and remaining modelling limitations. No field validation
+or deployment is implied.
 
-Phase 7 integration status is **PARTIAL**. The app now validates shared
-heat/weather inputs, detects stale Heat Map attributes, and isolates tab
-interactions. The audit found an engine place-to-junction snapping problem,
-mixed-date planner radiation and missing corrected-heat integration. See
-[the integration QA handoff](docs/integration_qa.md) for evidence, owners,
-suggested interfaces, test/browser results and deployment blockers. Current
-route and investment numbers are the unchanged engine outputs and need
-re-baselining after Person 2 fixes snapping; they are not validated field results.
+## Offline correction and reproducible results
+
+The app only reads existing outputs. It does not regenerate sensors, apply
+corrections automatically or modify the frozen network. The activated bundle is
+selected by `data/corrections/current.json`; every output and source input is
+validated. No bundle means clearly labelled baseline-only operation; a damaged
+or stale bundle produces an error.
+
+```powershell
+# Explicit offline operation: creates/verifies a separate immutable version.
+.venv\Scripts\python.exe -B -m heat_model.sensor_correction --activate
+
+# Reproduce all-day route, demand, heat, allocation and benchmark results.
+# The default new data/results/<version>/ destination refuses overwrite.
+.venv\Scripts\python.exe -B integration_results.py
+```
+
+Existing correction versions are preserved. Repeating identical correction
+inputs verifies the existing bundle. A different active version is never
+silently replaced; review and archive/change the derived pointer explicitly.
+Results can be rerun with `--output` pointing to a new unused directory. Do not
+run `heat_model/run_all.py`, `heat_model/heat.py` or `person2_results.py` simply to
+view the app: those older generation/export commands can replace canonical
+outputs. Use `integration_results.py` for this repair's separate reports.
 
 Run the full suite, including Streamlit interaction tests:
 
