@@ -1,12 +1,76 @@
 """Local CoolCorridor Streamlit app. Run: python -m streamlit run app.py"""
 
 import streamlit as st
+import pandas as pd
 
 import engine
 from cool_route import (
     ROUTE_LABELS, build_route_map, comparison_metrics, comparison_table,
     default_place_ids, fetch_routes, load_places,
 )
+from heat_map import (
+    HOURS, build_heat_map, heat_summary, legend_html, load_heat_data,
+    replay_date, sensor_snapshot,
+)
+from sensors_dashboard import render_sensors
+
+
+def render_heat_map() -> None:
+    st.subheader("Heat across the walking network")
+    st.write("Explore modelled heat on actual walking links around Putra Heights LRT Station.")
+    st.info("The heat score is a modelled index incorporating sun, shade, surfaces and wind. "
+            "It is not measured air temperature. Sensor readings shown here are SIMULATED.")
+    hour = st.select_slider("Heat Map replay hour", options=list(HOURS), value=14,
+                            format_func=lambda h: f"{h:02d}:00", key="heat_hour")
+    try:
+        links = load_heat_data(hour)
+        date = replay_date(hour)
+        summary = heat_summary(links)
+    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
+        st.error(f"Heat network unavailable: {exc}")
+        return
+    corrected = links.attrs["sensor_corrected"]
+    st.caption(f"Design-day replay: {date} · {hour:02d}:00 Asia/Kuala_Lumpur. "
+               + ("Sensor-corrected model heat; corrections may use simulated readings."
+                  if corrected else "Uncorrected model heat — sensor correction outputs are unavailable for this hour."))
+    avg, hottest, shade_metric, count = st.columns(4)
+    avg.metric("Average link heat index", f"{summary['average']:.2f} °C")
+    hottest.metric("Hottest walking link", f"{summary['hottest']:.2f} °C")
+    shade_metric.metric("Network shade", f"{summary['shade']:.1%}")
+    count.metric("Walking links", f"{summary['count']:,}")
+    st.caption(f"Average heat gives each link equal weight. Shade is weighted by link length. "
+               f"Hottest: {summary['hottest_id']} ({summary['ties']} tied link(s); lowest ID shown). "
+               "Summaries cover the entire network; overlay toggles do not filter them.")
+    st.markdown(legend_html(), unsafe_allow_html=True)
+    st.caption("Fixed heat-index scale: 26–44°C at every hour. Values outside the scale use its end colors.")
+    covered_col, canopy_col, shade_col = st.columns(3)
+    covered = covered_col.checkbox("Covered walkways · blue outline", key="heat_covered")
+    canopy = canopy_col.checkbox("Tree canopy · green outline", key="heat_canopy")
+    shade = shade_col.checkbox("Shade · grey outline", key="heat_shade")
+    try:
+        sensors = sensor_snapshot(hour, date)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        st.warning(f"Sensor overlay unavailable: {exc}")
+        sensors = pd.DataFrame(columns=["sensor_id", "link_id", "position", "air_temp_c", "rh_pct",
+                                         "surface_temp_c", "status", "site_type", "timestamp"])
+    if not sensors.empty:
+        if sensors.attrs.get("stream_available", False):
+            st.caption("SIMULATED sensor snapshots: latest same-day reading at or before the selected hour. "
+                       "A reading up to five minutes old is labelled stale; older readings are withheld. "
+                       "Purple dots have readings; grey dots have no recent reading. Hover for values and timestamps.")
+        else:
+            st.warning("Simulated sensor stream unavailable. Site locations remain visible without readings.")
+    try:
+        deck = build_heat_map(links, sensors, covered=covered, canopy=canopy, shade=shade)
+    except (ValueError, TypeError, KeyError) as exc:
+        st.error(f"Heat map could not be prepared: {exc}")
+        return
+    st.pydeck_chart(deck, height=600, key="heat_network_map",
+                    alt="Walking network colored by modelled heat index with eight simulated sensor sites")
+    st.caption("Hover a link for its heat index, shade, covered status, canopy and surface. "
+               "Outlines highlight existing attributes; the central line keeps its heat color. "
+               "Canopy is a link-level estimate, not a map of individual trees. "
+               "This replay does not use today's forecast. Restart the app after shared model files change.")
 
 
 def render_cool_route() -> None:
@@ -93,11 +157,16 @@ def render_cool_route() -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="CoolCorridor · Cool Route", page_icon="🌿", layout="wide")
+    st.set_page_config(page_title="CoolCorridor · Walking with less heat", page_icon="🌿", layout="wide")
     st.title("CoolCorridor")
     st.caption("Putra Heights · Walking with less heat")
-    with st.tabs(["Cool Route"])[0]:
+    route_tab, heat_tab, sensors_tab = st.tabs(["Cool Route", "Heat Map", "Sensors"], default="Sensors")
+    with route_tab:
         render_cool_route()
+    with heat_tab:
+        render_heat_map()
+    with sensors_tab:
+        render_sensors()
 
 
 if __name__ == "__main__":

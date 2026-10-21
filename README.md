@@ -2,10 +2,10 @@
 
 Heat-aware walking routes and cooling intervention planning around Putra Heights
 LRT. The repository contains the heat model (Person 1), routing and planner
-(Person 2), and the synthetic sensor generator and Streamlit + pydeck Cool Route
-tab (Person 3).
+(Person 2), and the synthetic sensor generator and Streamlit + pydeck Cool Route,
+Heat Map and Sensors tabs (Person 3).
 
-## Launch the Cool Route app locally
+## Launch the app locally
 
 From the repository root in PowerShell, using the existing `.venv`:
 
@@ -22,6 +22,30 @@ and an hour from 07:00 through 19:00. Both route options are calculated by
 `engine.route()` and drawn from its returned walking-link geometry. The app
 shows route metrics, comparison, map tooltips and visibility toggles. Route
 calculations use local files; CARTO basemap tiles need internet access.
+
+The **Heat Map** tab shows the actual 1,491-link network at 14:00.
+Move the replay-hour slider from 07:00 to 19:00; the heat legend stays fixed at
+26–44°C. Optional outlines highlight covered walkways, canopy and shade. Hover
+links and the eight sensor markers for details. Sensor readings are explicitly
+**SIMULATED**, selected at or before the chosen replay time; stale and missing
+readings are labelled. Current heat is **uncorrected model heat**, not measured
+air temperature. All tabs have independent replay controls.
+
+Read [the Heat Map guide](docs/heat_map_app.md) for source data, aggregation,
+overlay definitions, limitations and visual verification steps. No additional
+dependencies or startup commands are needed for this phase.
+
+The app opens on **Sensors** at **13:05**, showing the actual S01 injected spike.
+Replay 6 September 2026 in five-minute steps, select any sensor, and view its
+air-versus-weather, humidity and surface-temperature histories. Active, Stale,
+Missing and Anomaly statuses are computed against replay time. Sensor samples
+remain explicitly **SIMULATED DATA**; no correction or regeneration runs.
+
+For the outage demonstration, choose **S02** at **12:10**, then enable full-day
+history to see the six-sample gap and 12:30 recovery. The full-day option may show
+future history, but statuses and event counts remain tied to replay time.
+See [the Sensors Dashboard guide](docs/sensors_dashboard.md) for detection rules,
+configured fault annotations, provenance limitations and verification steps.
 
 Run the full suite, including Streamlit interaction tests:
 

@@ -28,6 +28,10 @@ def app():
     return AppTest.from_file(str(ROOT / "app.py"), default_timeout=30)
 
 
+def route_tab(at):
+    return next(tab for tab in at.tabs if tab.label == "Cool Route")
+
+
 def test_defaults_use_real_shop_and_station(real_routes):
     places, routes = real_routes
     assert len(places) == 66
@@ -142,10 +146,11 @@ def test_app_default_calls_both_real_modes_and_displays_metrics(monkeypatch, rea
     assert at.selectbox(key="route_origin").value == "P043"
     assert at.selectbox(key="route_destination").value == "P066"
     assert at.select_slider(key="route_hour").value == 14
-    assert at.get("deck_gl_json_chart")
-    assert len(at.dataframe) == 1
-    pd.testing.assert_frame_equal(at.dataframe[0].value, cool_route.comparison_table(routes).round(3))
-    assert at.metric[0].value.startswith("6.782")
+    tab = route_tab(at)
+    assert tab.get("deck_gl_json_chart")
+    assert len(tab.dataframe) == 1
+    pd.testing.assert_frame_equal(tab.dataframe[0].value, cool_route.comparison_table(routes).round(3))
+    assert tab.metric[0].value.startswith("6.782")
 
 
 def test_app_time_and_place_changes_show_current_results():
@@ -168,8 +173,8 @@ def test_app_invalid_selection_clears_previous_map():
     at.selectbox(key="route_origin").select("P066").run()
     assert not at.exception
     assert any("different origin" in message.value for message in at.warning)
-    assert not at.get("deck_gl_json_chart")
-    assert not at.dataframe
+    assert not route_tab(at).get("deck_gl_json_chart")
+    assert not route_tab(at).dataframe
 
 
 def test_app_no_routes_and_partial_results(monkeypatch, real_routes):
@@ -177,9 +182,9 @@ def test_app_no_routes_and_partial_results(monkeypatch, real_routes):
     monkeypatch.setattr(engine, "route", lambda *args, **kwargs: None)
     at = app().run()
     assert not at.exception
-    assert len(at.warning) == 2
+    assert len(route_tab(at).warning) == 2
     assert any("No route results" in message.value for message in at.info)
-    assert not at.get("deck_gl_json_chart")
+    assert not route_tab(at).get("deck_gl_json_chart")
 
     def partial(origin, destination, hour, mode):
         if mode == "coolest":
@@ -188,8 +193,8 @@ def test_app_no_routes_and_partial_results(monkeypatch, real_routes):
     monkeypatch.setattr(engine, "route", partial)
     at = app().run()
     assert not at.exception
-    assert at.get("deck_gl_json_chart")
-    assert list(at.dataframe[0].value.columns) == ["Shortest route"]
+    assert route_tab(at).get("deck_gl_json_chart")
+    assert list(route_tab(at).dataframe[0].value.columns) == ["Shortest route"]
     assert any("Only one route" in message.value for message in at.info)
 
 
@@ -198,7 +203,7 @@ def test_app_missing_places_file(monkeypatch, tmp_path):
     at = app().run()
     assert not at.exception
     assert any("Places could not be loaded" in message.value for message in at.error)
-    assert not at.selectbox
+    assert not route_tab(at).selectbox
 
 
 def test_layer_units_are_literal_strings_with_bounded_pixel_sizes(real_routes):
