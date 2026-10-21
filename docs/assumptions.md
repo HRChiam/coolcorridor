@@ -1,6 +1,6 @@
 # Assumptions
 
-Every assumption and simulated input in CoolCorridor, as the organisers require. Values are what the code uses; replace any with a sourced figure when one is found. Pilot area: Putra Heights, an 800 m catchment around the LRT station (KJ37/SP31).
+Every assumption and simulated input in COOLNEX, as the organisers require. Values are what the code uses; replace any with a sourced figure when one is found. Pilot area: Putra Heights, an 800 m catchment around the LRT station (KJ37/SP31).
 
 ## Heat model (Person 1)
 

@@ -1,5 +1,7 @@
 # Recomputed integration results
 
+> Official project brand: **COOLNEX**. See the [rebranding review](rebranding.md) for the active deployment snapshot and intentional compatibility/historical exceptions.
+
 > Merge update: numerical results and packaging below describe the pre-merge release. See [merge resolution](merge_resolution.md) for the current `a64cdcf` integration, recalculated Planner and routing results, active correction bundle and deployment snapshot. Previous browser/cloud evidence does not verify this merged build.
 
 Design day: **2026-09-06, Asia/Kuala_Lumpur**. Heat is a Celsius-labelled

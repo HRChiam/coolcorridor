@@ -90,7 +90,7 @@ def comfort_test(budget: float) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="CoolCorridor routing and planner outputs")
+    parser = argparse.ArgumentParser(description="COOLNEX routing and planner outputs")
     parser.add_argument("--budget", type=float, default=100000,
                         help="Budget in RM (ASSUMED until team agrees)")
     parser.add_argument("--data", type=Path, default=None, help="Path to repo's data folder")
@@ -104,7 +104,7 @@ def main() -> None:
     if args.data:
         engine.set_data_dir(args.data)
 
-    print("CoolCorridor Person 2 | Planning indicators")
+    print("COOLNEX Person 2 | Planning indicators")
     print("IMPORTANT: Demand, prices, comfort limit and pedestrian speed are modelling assumptions.")
     print("Heat values are Person 1 modelled (may include simulated-sensor corrections).\n")
     print("ASSUMPTIONS TABLE (not empirical measurements)")

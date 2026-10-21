@@ -1,4 +1,4 @@
-"""Local CoolCorridor Streamlit app. Run: python -m streamlit run app.py"""
+"""Local COOLNEX Streamlit app. Run: python -m streamlit run app.py"""
 
 import streamlit as st
 import pandas as pd
@@ -173,12 +173,12 @@ def render_cool_route() -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="CoolCorridor · Walking with less heat", page_icon="🌿", layout="wide")
-    st.title("CoolCorridor")
+    st.set_page_config(page_title="COOLNEX", page_icon="🌿", layout="wide")
+    st.title("COOLNEX")
     st.caption("Putra Heights · Walking with less heat")
     if not shared_directory_matches(engine.DATA_DIR):
         st.error("Engine data override differs from the repository data used by Heat Map and Sensors. "
-                 "Remove COOLCORRIDOR_DATA_DIR for this app or coordinate one shared data directory with the team.")
+                 "Remove the engine data-directory override or coordinate one shared data directory with the team.")
     route_tab, heat_tab, sensors_tab, planner_tab = st.tabs(
         ["Cool Route", "Heat Map", "Sensors", "Planner"], default="Sensors")
     with route_tab:

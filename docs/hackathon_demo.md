@@ -1,4 +1,6 @@
-# CoolCorridor: three-minute hackathon demo
+# COOLNEX: three-minute hackathon demo
+
+> Official project brand: **COOLNEX**. See the [rebranding review](rebranding.md) for the active deployment snapshot and intentional compatibility/historical exceptions.
 
 > Merge update: numerical results and packaging below describe the pre-merge release. See [merge resolution](merge_resolution.md) for the current `a64cdcf` integration, recalculated Planner and routing results, active correction bundle and deployment snapshot. Previous browser/cloud evidence does not verify this merged build.
 
@@ -27,7 +29,7 @@ and scroll tables, with no mouse-hover guarantee on a physical phone.
 
 | Time | Action | Suggested explanation |
 |---|---|---|
-| 0:00–0:15 | Introduce the pilot | “CoolCorridor compares walking heat exposure and helps prioritize illustrative cooling investments around Putra Heights LRT.” |
+| 0:00–0:15 | Introduce the pilot | “COOLNEX compares walking heat exposure and helps prioritize illustrative cooling investments around Putra Heights LRT.” |
 | 0:15–0:45 | Heat Map, 13:00; toggle shade/canopy/covered outlines | “These are real network links with modelled heat indices. L0027 reaches 44.39°C on the index. The color scale stays 26–44°C; hover retains values above the red endpoint. Shade varies along the network.” |
 | 0:45–1:20 | Cool Route, default P043→P066 at 14:00 | “The shortest route is 824.5 m; the cooler route is 826.3 m—1.8 m extra—with 9.283 °C·min less modelled heat exposure. That is exposure, not an air-temperature drop.” |
 | 1:20–2:05 | Sensors: S01/13:05; then S02/12:10 and 12:30 | “All readings are simulated. S01 contains an injected +8°C spike; the independent detector reports a 7.6825°C residual departure. S02 has a real gap in the simulated CSV: Missing at 12:10, Active again at 12:30.” |

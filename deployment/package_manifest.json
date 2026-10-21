@@ -1,11 +1,11 @@
 {
-  "content_version": "f5d9e8d1e2f6a281ec6cf44d8aa13619feebdc68edc2b0042ecd6a7be58aa99d",
+  "content_version": "c9a128054ca0eaff5c1de5a3200731e670925dfedd5a25a03b44c68bc12fe08e",
   "correction_version": "v1-20260906-2c6bce708d14c832",
   "design_date": "2026-09-06",
   "files": {
     "app.py": {
-      "bytes": 11014,
-      "sha256": "2892a75912cde9bee9279042e99a17022ca9d766b7294fdf2894c813c72f7c85"
+      "bytes": 10973,
+      "sha256": "49384b93d4f98b79b7e3ea9f51f4b37c3838db31131375d627307afcf87425b2"
     },
     "app_data.py": {
       "bytes": 1972,
@@ -117,10 +117,10 @@
     19
   ],
   "link_count": 1491,
-  "package": "coolcorridor-f5d9e8d1e2f6a281ec6c.zip",
-  "package_bytes": 284074,
-  "package_sha256": "2b4dbebc5f4274d07f877461259698b5f613dad8916b2a40650655d6610fa0ab",
+  "package": "coolcorridor-c9a128054ca0eaff5c1d.zip",
+  "package_bytes": 284060,
+  "package_sha256": "d40025a42e5a3ab8ef66c5de7165e57f4eab6ac808dee7b80708c0112fcf10ca",
   "schema_version": 1,
   "sensor_source": "simulated",
-  "unpacked_bytes": 3126718
+  "unpacked_bytes": 3126677
 }
