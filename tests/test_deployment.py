@@ -128,8 +128,8 @@ assert not app.exception, str(app.exception)
 assert not app.error, [error.value for error in app.error]
 assert [t.label for t in app.tabs]==['Cool Route','Heat Map','Sensors','Planner']
 assert all(t.get('deck_gl_json_chart') for t in app.tabs)
-assert app.tabs[3].metric[0].value=='RM 99,920.00'
-assert app.tabs[3].metric[2].value=='15'
+assert app.tabs[3].metric[0].value=='RM 99,818.00'
+assert app.tabs[3].metric[2].value=='6'
 print(json.dumps({'cold_app_seconds':time.perf_counter()-started,'tabs':4,'maps':4}))
 """
     result = subprocess.run([sys.executable, "-B", "-c", code], cwd=minimal, env=env,

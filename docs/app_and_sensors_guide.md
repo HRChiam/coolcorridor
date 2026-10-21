@@ -1,20 +1,21 @@
 # Heat model data for the app and the sensor simulator
 
-For Person 3 (web app and sensor simulator). This covers what the heat model gives you, for the simulator and for each app tab, and how to run the sensor correction once your readings exist. Every snippet here has been run against the current data.
+For Person 3 (web app and sensor simulator). This covers what the heat model gives you, for the simulator and for each app tab, and how to run the sensor correction once your readings exist. The interfaces below describe the merged implementation; historical main-branch numerical examples are not merged-model results.
 
-## The import
+## The imports
 
 From the repo root:
 
 ```python
-from heat_model.heat import heat_at, design_weather, HOURS
+import engine                                # Person 2's module: the contract functions
+from heat_model.heat import design_weather   # the weather of the modelled day
 ```
 
 | Name | What it gives you |
 |---|---|
-| `heat_at(hour)` | GeoDataFrame, one row per walking link (1,491) at that hour (7 to 19). Columns: `link_id`, `u`, `v`, `name`, `length_m`, `covered`, `canopy`, `surface`, `albedo`, `geometry` (LineString, longitude/latitude), `shade` (0 to 1), `heat_model` (°C), `heat` (°C, effective from a validated versioned correction, otherwise explicitly baseline) |
+| `engine.heat_at(hour)` | 1,491 real links, EPSG:4326 longitude/latitude, network fields including `unsafe` and `confidence`, `shade`, `heat_model` (baseline), `heat_score` and `heat` (same effective index), `hour`, `design_date`, `heat_source`, `sensor_source`, `correction_version`. Corrections require a validated active bundle; both heat interfaces agree. |
 | `design_weather()` | The day we model, **6 Sep 2026**, indexed by hour: `air_temp_c`, `rh_pct`, `sw_wm2` (sunlight), `wind_ms`, `sun_elev_deg`, `sun_azim_deg` |
-| `HOURS` | `range(7, 20)`, for the 7am to 7pm slider |
+| `engine.HOURS` | `(7, 8, …, 19)`, for the 7am to 7pm slider |
 
 The app reads these files and never needs to download anything. It needs `geopandas` and `pandas` for this import, not `osmnx`, `pvlib` or `rasterio`.
 
@@ -53,10 +54,10 @@ rh = np.interp(hh, w.index, w.rh_pct)
 sun = np.interp(hh, w.index, w.sw_wm2)
 
 # For each site's shade and reflectivity, use the model's values for that hour
-at_1pm = sites.merge(heat_at(13)[["link_id", "shade", "albedo"]], on="link_id")
+at_1pm = sites.merge(engine.heat_at(13)[["link_id", "shade", "albedo"]], on="link_id")
 ```
 
-Then follow the spec: air = `air` + `offset_c` + noise; surface = air + (1 − `shade`) × `sun` ÷ 1000 × 25 × (1 − `albedo`) + noise. Take `shade` from `heat_at(hour)` for each reading's hour, because shade changes through the day (S05, the covered walkway, is always 1.0).
+Then follow the spec: air = `air` + `offset_c` + noise; surface = air + (1 − `shade`) × `sun` ÷ 1000 × 25 × (1 − `albedo`) + noise. Take `shade` from `engine.heat_at(hour)` for each reading's hour, because shade changes through the day (S05, the covered walkway, is always 1.0).
 
 ### `data/sensors_stream.csv`
 
@@ -76,33 +77,29 @@ S03,L0375,2026-09-06T13:05:00+08:00,33.6,41,38.9,simulated
 The correction is an explicit offline operation; the app never runs it:
 
 ```powershell
-.venv\Scripts\python.exe -B -m heat_model.sensor_correction --activate
+.venv\Scripts\python.exe heat_model\sensor_correction.py
 ```
 
-It creates/verifies an immutable `data/corrections/<version>/` containing all
-19,383 corrected link/hour values, sensor offsets, excluded-sample audit,
-previous-hour validation and a provenance manifest. `current.json` selects a
-validated version. Existing versions and a different active pointer are not
-silently replaced. The frozen GeoJSON and raw sensor CSV remain unchanged.
-
-The shared reader validates input hashes, selected design weather, complete
-coverage and all output hashes before making effective heat available to **Heat
-Map, Cool Route and Planner together**. Labels clearly say SIMULATED. The error
-reduction demonstrates recovery of synthetic offsets, not field accuracy.
-See [full_integration_repair.md](full_integration_repair.md).
+- It creates a separate immutable `data/corrections/v1-*` bundle and prints the synthetic pipeline check. It never writes corrected columns into the frozen network or changes raw sensor CSV.
+- Use `python -B -m heat_model.sensor_correction --activate` only as an explicitly reviewed offline operation. An existing different pointer is refused; archive it and review a new version before activation.
+- `data/corrections/current.json` selects the validated bundle. Input, implementation and output SHA-256 hashes must match. App reads never generate or apply corrections.
+- Median calibration excludes detected residual anomalies, not configured fault IDs. The before/after check uses disjoint adjacent-hour windows of simulated air residuals; it is not field validation.
 
 ## Part 2: the app
 
 ### Heat Map tab
 
-- **Colour:** `heat_at(hour).heat`. Fix the colour scale to **26 to 44°C** for every hour. Over the day the heat runs from 26.4 to 43.1°C, so a fixed scale makes the map visibly heat up and cool down as the slider moves.
-- **Slider:** `HOURS`. Every hour is precomputed, so moving the slider only reads columns.
+- **Colour:** `engine.heat_at(hour).heat_score`. Fix the colour scale to **26 to 44°C** for every hour. Over the day the heat runs from 26.4 to 43.1°C, so a fixed scale makes the map visibly heat up and cool down as the slider moves.
+- **Slider:** `engine.HOURS`. Every hour is precomputed, so moving the slider only reads columns.
 - **Toggles:** covered walkways = `covered`; trees = `canopy > 0`; shade = `shade`.
+- **Optional confidence display:** draw links with `confidence == "low"` at reduced opacity. `confidence` is `high` (hand-tagged and within 150 m of a sensor, 49 links), `medium` (hand-tagged, 14) or `low` (values borrowed from other links, 1,428), so most of the map is faded and the checked main routes stand out.
+- **Share of the network in shade** at the chosen hour: `(g.shade * g.length_m).sum() / g.length_m.sum()`. At 1pm it's 19.7%. This is the same definition as Person 1's shade-coverage result.
+- **Unsafe links** (`unsafe == True`, 60 main-road links with no known footpath) are left out of routes by Person 2. Showing them on the map, e.g. as a dashed line, is optional.
 - **Buildings layer** (optional): `data/buildings.geojson`, with `height_m`.
 - **Drawing links with pydeck's PathLayer:**
 
 ```python
-g = heat_at(hour)
+g = engine.heat_at(hour)
 g["path"] = [list(map(list, geom.coords)) for geom in g.geometry]   # [[lon, lat], ...]
 ```
 
@@ -116,9 +113,21 @@ Compare like with like. **The sensors measure air temperature; the heat score is
 
 These come from Person 2's `engine.py` (`route()`, `priorities()`, `apply_fix()`). For the from/to dropdowns, use `data/places.geojson`: 66 places with `place_id`, `name` and `kind` (home 34, shop 25, park 4, community 2, transit 1). The three Serasi Residences blocks have 0 households because the building opens in Feb 2027. Label them "(opens Feb 2027)" if you list them.
 
+**Cool Route:**
+- The engine supports `mode` (the existing comparison tab renders shortest and coolest): fastest → `"shortest"`, balanced → `"balanced"` (at most 10% longer), cooler → `"coolest"` (at most 25% longer). For example, `engine.route(origin_id, dest_id, hour, "balanced")`.
+- Cards: `distance_m`, `extra_distance_pct`, `minutes_in_sun`, `heat_avoided`. Draw `result["geometry"]` (a GeoJSON FeatureCollection) in colour, and the shortest route in grey from `result["shortest"]["link_ids"]`.
+- Every mode avoids unsafe roads. If a place can only be reached on one, `result["uses_unsafe"]` is `True` and `result["warning"]` holds a message to show. Today no trip needs one.
+
+**Planner:**
+- `engine.priorities(budget_rm, horizon_years=10)` returns the ranked fixes with `cost_rm` (building cost, which the budget covers), `upkeep_rm_per_year`, `cost_10y_rm` (build + 10 years of upkeep), `person_min_saved_day` (once fully working), `benefit_over_horizon` (allowing for time to take effect), `benefit_per_rm`, `weeks_to_effect` and `quick_win`; show the quick-win tag and a "10-year total cost" column per fix. Area totals are in `.attrs["area_before"]` and `.attrs["area_after"]`; money in `.attrs["spent_rm"]` (build), `.attrs["upkeep_rm_per_year"]` and `.attrs["cost_10y_rm"]`. Show it as "RM X to build, plus RM Y a year".
+- **The "next 12 months / 10 years" toggle** sets `horizon_years=1` or `horizon_years=10`. Label the results "with our assumed costs".
+- `engine.priorities(budget_rm, quick_wins_only=True)` ranks only fixes that work within months (sails, covered walkways, cool paving): "what helps this year".
+- `engine.apply_fix(link_id, fix)` gives the before/after for one link; pass a list of link IDs for several at once.
+- Budget-independent demand and candidates are content/version cached. Horizon and upkeep policy are cache keys; `use_cache=False` provides an equivalent uncached reference.
+
 ## Things to know
 
-- `heat_at` caches validated snapshots using content hashes and correction versions; data changes invalidate caches. Restart when Python implementation code changes.
+- Shared effective-heat caches validate input content, implementation hashes and the active correction version; stale or corrupt bundles fail explicitly.
 - Don't edit `links.geojson` by hand. The heat model's scripts rewrite it.
 - Link IDs are frozen. Everything (sensors, flows, fixes) is keyed by `link_id`.
 - `data/coverage_map.html` and `data/tagging_map.html` are working maps on Person 1's machine only, not in the repo.

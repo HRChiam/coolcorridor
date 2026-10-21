@@ -1,5 +1,7 @@
 # CoolCorridor
 
+Current merge review: [resolved integration and updated results](docs/merge_resolution.md). Planner now uses safety-aware demand, horizon benefits and the budget optimizer from main. Historical numerical examples below are superseded by this report.
+
 Heat-aware walking routes and cooling intervention planning around Putra Heights
 LRT. The repository contains the heat model (Person 1), routing and planner
 (Person 2), and the synthetic sensor generator and Streamlit + pydeck Cool Route,

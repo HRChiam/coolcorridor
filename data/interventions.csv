@@ -1,5 +1,5 @@
-fix,cost_rm_per_m,shade_gain,albedo_gain,note
-shade_trees,160,0.35,0,"ASSUMPTION - landscaping plus upkeep; verify local quotations and planting feasibility"
-shade_sail,350,0.75,0,"ASSUMPTION - structure/anchors and upkeep; confirm local contractor prices"
-covered_walkway,1000,1.00,0,"ASSUMPTION - full continuous shade; obtain design and accessibility quotations"
-cool_paving,120,0,0.30,"ASSUMPTION - albedo uplift depends on existing paving; obtain material quotes"
+fix,cost_rm_per_m,shade_gain,albedo_gain,weeks_to_effect,maintenance_rm_per_year,quick_win,note
+shade_trees,160,0.35,0.0,260,25,no,"ASSUMPTION - planting plus 2 years' watering. Cross-check: Kota Kinabalu budgeted RM1m for 1,000 shade trees plus shrubs and landscaping (2012), at most ~RM125/m at one tree per 8 m. About 5 years to useful shade (assumed). Upkeep (ASSUMPTION): DBKL pruning RM100-1,000 per tree (2014); assumed RM200 a tree a year"
+shade_sail,350,0.75,0.0,4,44,yes,"ASSUMPTION - fabric, posts and anchors. Cross-check: US installed prices US$2.50-8 per sq ft, so RM350/m is at the low end; no Malaysian price found. About 4 weeks to install (assumed). Upkeep (ASSUMPTION): fabric replaced about every 8 years"
+covered_walkway,1000,1.0,0.0,22,15,yes,"ASSUMPTION - full continuous shade and rain cover. Cross-check: MBSA set aside RM2.7m as its share of over 3 km of LRT3 walkways (2026), at least ~RM900/m; announced in July for completion in December (~22 weeks). Upkeep (ASSUMPTION): ~1.5% of cost a year"
+cool_paving,120,0.0,0.3,2,20,yes,"ASSUMPTION - reflective coating on the footpath. Cross-check: Los Angeles CoolSeal US$5.40-6.50 per m2 installed, lasting 5-7 years, so RM120/m may be high. About 2 weeks (assumed). Upkeep (ASSUMPTION): recoat about every 6 years"

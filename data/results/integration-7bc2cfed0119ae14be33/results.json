@@ -1,0 +1,1797 @@
+{
+  "schema_version": 1,
+  "settings": {
+    "budget_rm": 100000.0,
+    "route_hour": 14,
+    "route_summary_hours": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "route_summary_sample_limit": null,
+    "benchmark_budgets_rm": [],
+    "origin_id": "P043",
+    "destination_id": "P066"
+  },
+  "units": {
+    "heat": "degree-C-labelled modelled heat index; not measured air temperature",
+    "heat_exposure": "degree-C-minutes above comfort threshold per trip",
+    "population_exposure": "person-degree-C-minutes above comfort threshold per day",
+    "investment": "RM; assumed costs, not verified construction quotations",
+    "flow_day": "link traversals per day, not unique people or trips",
+    "validation_error": "degrees C; held-out simulated air residual, not field heat-index accuracy",
+    "minutes_above_comfort": "count of hourly samples above comfort times 60; discrete model indicator"
+  },
+  "design_date": "2026-09-06",
+  "timezone": "Asia/Kuala_Lumpur",
+  "heat_source": "corrected",
+  "sensor_source": "simulated",
+  "correction_version": "v1-20260906-2c6bce708d14c832",
+  "input_hashes": {
+    "../config/sensor_simulation.json": "71746dd16ef0a40033e56b85d290c777239a98faa6866dfe8f14b7c754d00a07",
+    "corrections/current.json": "01e1e733b8f062a980c6f5632c5dd26c5c12bfa3545b6871bc498044d8c74228",
+    "interventions.csv": "99996dd8ac905b3f0c52c3fd469d01f63c93fab8254703832dda1610d136ca16",
+    "links.geojson": "bcb966cd052830da611502fa481568ba549c1bd55e2942b09299edeee1d2c9ab",
+    "places.geojson": "49b9a77ef614d028465108396099f89919f16d6abe1cfba99410b3d897e87919",
+    "sensor_links.csv": "27033510ad9f071f867d0c05b890e946ceb358194e134890857c976829b8b5a7",
+    "sensors_stream.csv": "bdf932b11b4d93ba598a2853577a709e195f9e833f5f26cdbc7e8aa46cf83943",
+    "weather.csv": "3e3bd02fc4de3382a188825ee3bbf4e8bda666bb277c8d3f3ecd6f20c9365fd4"
+  },
+  "source_hashes": {
+    "engine.py": "7895c81b400cd0762ffffc2643b6fc511d735491e3044884331588d204a5ac10",
+    "heat_model/effective.py": "b748dac30cee67e9bd7e8b22cc0e9367f29d76a9f9bec611dc1b93e4ddbcc581",
+    "heat_model/heat.py": "a8bbd2e278386f25b45fbb313f090ae09251ddb3a3a2a8a2efafcac5d7e985bf",
+    "heat_model/sensor_correction.py": "2bb40ff312daf5c9755fdf404052743ad5c3de9eda98ff880b9fa1b2841d17f6",
+    "integration_results.py": "0080e16750e6c2864d7c80720b4a3b1e5ad0c148cb975dae06534d76c207753b"
+  },
+  "routes": {
+    "shortest": {
+      "link_ids": [
+        "L0071",
+        "L0072",
+        "L0076",
+        "L0074",
+        "L0492",
+        "L0491",
+        "L0502",
+        "L0504",
+        "L0293",
+        "L0295",
+        "L0916",
+        "L0914",
+        "L0919",
+        "L0318",
+        "L0319",
+        "L1077",
+        "L1078",
+        "L1081",
+        "L1241"
+      ],
+      "path": [
+        "L0071",
+        "L0072",
+        "L0076",
+        "L0074",
+        "L0492",
+        "L0491",
+        "L0502",
+        "L0504",
+        "L0293",
+        "L0295",
+        "L0916",
+        "L0914",
+        "L0919",
+        "L0318",
+        "L0319",
+        "L1077",
+        "L1078",
+        "L1081",
+        "L1241"
+      ],
+      "distance_m": 824.5,
+      "walking_time_min": 11.451,
+      "minutes_in_sun": 9.684,
+      "heat_exposure": 101.404,
+      "geometry": {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0071"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.570195,
+                  2.993605
+                ],
+                [
+                  101.5701879,
+                  2.9944825
+                ],
+                [
+                  101.5701876,
+                  2.9945135
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0072"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5702496,
+                  2.9948504
+                ],
+                [
+                  101.570217,
+                  2.9945458
+                ],
+                [
+                  101.5701876,
+                  2.9945135
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0076"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5702496,
+                  2.9948504
+                ],
+                [
+                  101.570313,
+                  2.9949057
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0074"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.570536,
+                  2.9949051
+                ],
+                [
+                  101.570313,
+                  2.9949057
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0492"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.570536,
+                  2.9949051
+                ],
+                [
+                  101.5706052,
+                  2.9949049
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0491"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5713675,
+                  2.9949075
+                ],
+                [
+                  101.5706052,
+                  2.9949049
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0502"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5713675,
+                  2.9949075
+                ],
+                [
+                  101.5714176,
+                  2.9949073
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0504"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5723961,
+                  2.9949291
+                ],
+                [
+                  101.5714176,
+                  2.9949073
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0293"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5723961,
+                  2.9949291
+                ],
+                [
+                  101.5724004,
+                  2.9950699
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0295"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5724108,
+                  2.9954105
+                ],
+                [
+                  101.5724004,
+                  2.9950699
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0916"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5724108,
+                  2.9954105
+                ],
+                [
+                  101.5730946,
+                  2.9954226
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0914"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5736968,
+                  2.9954326
+                ],
+                [
+                  101.5730946,
+                  2.9954226
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0919"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5744339,
+                  2.9954325
+                ],
+                [
+                  101.5736968,
+                  2.9954326
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0318"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5744339,
+                  2.9954325
+                ],
+                [
+                  101.5744298,
+                  2.9957957
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0319"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5744268,
+                  2.9959333
+                ],
+                [
+                  101.5744298,
+                  2.9957957
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L1077"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5744268,
+                  2.9959333
+                ],
+                [
+                  101.5744748,
+                  2.9959901
+                ],
+                [
+                  101.5745183,
+                  2.9960048
+                ],
+                [
+                  101.5748564,
+                  2.9960002
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L1078"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5750146,
+                  2.9959793
+                ],
+                [
+                  101.5748564,
+                  2.9960002
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L1081"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5752415,
+                  2.9958629
+                ],
+                [
+                  101.5750146,
+                  2.9959793
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L1241"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5752415,
+                  2.9958629
+                ],
+                [
+                  101.5752965,
+                  2.9959672
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "mode": "shortest",
+      "extra_distance_pct": 0.0,
+      "heat_avoided": 0.0,
+      "uses_unsafe": false,
+      "warning": null,
+      "shortest": {
+        "link_ids": [
+          "L0071",
+          "L0072",
+          "L0076",
+          "L0074",
+          "L0492",
+          "L0491",
+          "L0502",
+          "L0504",
+          "L0293",
+          "L0295",
+          "L0916",
+          "L0914",
+          "L0919",
+          "L0318",
+          "L0319",
+          "L1077",
+          "L1078",
+          "L1081",
+          "L1241"
+        ],
+        "path": [
+          "L0071",
+          "L0072",
+          "L0076",
+          "L0074",
+          "L0492",
+          "L0491",
+          "L0502",
+          "L0504",
+          "L0293",
+          "L0295",
+          "L0916",
+          "L0914",
+          "L0919",
+          "L0318",
+          "L0319",
+          "L1077",
+          "L1078",
+          "L1081",
+          "L1241"
+        ],
+        "distance_m": 824.5,
+        "walking_time_min": 11.451,
+        "minutes_in_sun": 9.684,
+        "heat_exposure": 101.404
+      },
+      "heat_units": "degree-C-minutes above 32C comfort threshold (assumed)",
+      "data_label": "Modelled heat index; offline correction using SIMULATED sensors",
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "design_date": "2026-09-06",
+      "correction_version": "v1-20260906-2c6bce708d14c832",
+      "origin_id": "P043",
+      "dest_id": "P066",
+      "hour": 14
+    },
+    "coolest": {
+      "link_ids": [
+        "L0071",
+        "L0072",
+        "L0076",
+        "L0074",
+        "L0492",
+        "L0491",
+        "L0502",
+        "L0504",
+        "L0293",
+        "L0295",
+        "L0298",
+        "L0296",
+        "L0922",
+        "L0317",
+        "L0319",
+        "L1077",
+        "L1078",
+        "L1080",
+        "L1235"
+      ],
+      "path": [
+        "L0071",
+        "L0072",
+        "L0076",
+        "L0074",
+        "L0492",
+        "L0491",
+        "L0502",
+        "L0504",
+        "L0293",
+        "L0295",
+        "L0298",
+        "L0296",
+        "L0922",
+        "L0317",
+        "L0319",
+        "L1077",
+        "L1078",
+        "L1080",
+        "L1235"
+      ],
+      "distance_m": 826.3,
+      "walking_time_min": 11.476,
+      "minutes_in_sun": 8.466,
+      "heat_exposure": 92.121,
+      "geometry": {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0071"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.570195,
+                  2.993605
+                ],
+                [
+                  101.5701879,
+                  2.9944825
+                ],
+                [
+                  101.5701876,
+                  2.9945135
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0072"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5702496,
+                  2.9948504
+                ],
+                [
+                  101.570217,
+                  2.9945458
+                ],
+                [
+                  101.5701876,
+                  2.9945135
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0076"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5702496,
+                  2.9948504
+                ],
+                [
+                  101.570313,
+                  2.9949057
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0074"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.570536,
+                  2.9949051
+                ],
+                [
+                  101.570313,
+                  2.9949057
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0492"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.570536,
+                  2.9949051
+                ],
+                [
+                  101.5706052,
+                  2.9949049
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0491"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5713675,
+                  2.9949075
+                ],
+                [
+                  101.5706052,
+                  2.9949049
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0502"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5713675,
+                  2.9949075
+                ],
+                [
+                  101.5714176,
+                  2.9949073
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0504"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5723961,
+                  2.9949291
+                ],
+                [
+                  101.5714176,
+                  2.9949073
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0293"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5723961,
+                  2.9949291
+                ],
+                [
+                  101.5724004,
+                  2.9950699
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0295"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5724108,
+                  2.9954105
+                ],
+                [
+                  101.5724004,
+                  2.9950699
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0298"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5724108,
+                  2.9954105
+                ],
+                [
+                  101.5724227,
+                  2.9957996
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0296"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5730914,
+                  2.9957934
+                ],
+                [
+                  101.5724227,
+                  2.9957996
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0922"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5730914,
+                  2.9957934
+                ],
+                [
+                  101.5736923,
+                  2.9957966
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0317"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5736923,
+                  2.9957966
+                ],
+                [
+                  101.5744298,
+                  2.9957957
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L0319"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5744268,
+                  2.9959333
+                ],
+                [
+                  101.5744298,
+                  2.9957957
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L1077"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5744268,
+                  2.9959333
+                ],
+                [
+                  101.5744748,
+                  2.9959901
+                ],
+                [
+                  101.5745183,
+                  2.9960048
+                ],
+                [
+                  101.5748564,
+                  2.9960002
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L1078"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5750146,
+                  2.9959793
+                ],
+                [
+                  101.5748564,
+                  2.9960002
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L1080"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5750691,
+                  2.9960873
+                ],
+                [
+                  101.5750506,
+                  2.9960512
+                ],
+                [
+                  101.5750146,
+                  2.9959793
+                ]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": {
+              "link_id": "L1235"
+            },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [
+                  101.5752965,
+                  2.9959672
+                ],
+                [
+                  101.5750691,
+                  2.9960873
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "mode": "coolest",
+      "extra_distance_pct": 0.22,
+      "heat_avoided": 9.283,
+      "uses_unsafe": false,
+      "warning": null,
+      "shortest": {
+        "link_ids": [
+          "L0071",
+          "L0072",
+          "L0076",
+          "L0074",
+          "L0492",
+          "L0491",
+          "L0502",
+          "L0504",
+          "L0293",
+          "L0295",
+          "L0916",
+          "L0914",
+          "L0919",
+          "L0318",
+          "L0319",
+          "L1077",
+          "L1078",
+          "L1081",
+          "L1241"
+        ],
+        "path": [
+          "L0071",
+          "L0072",
+          "L0076",
+          "L0074",
+          "L0492",
+          "L0491",
+          "L0502",
+          "L0504",
+          "L0293",
+          "L0295",
+          "L0916",
+          "L0914",
+          "L0919",
+          "L0318",
+          "L0319",
+          "L1077",
+          "L1078",
+          "L1081",
+          "L1241"
+        ],
+        "distance_m": 824.5,
+        "walking_time_min": 11.451,
+        "minutes_in_sun": 9.684,
+        "heat_exposure": 101.404
+      },
+      "heat_units": "degree-C-minutes above 32C comfort threshold (assumed)",
+      "data_label": "Modelled heat index; offline correction using SIMULATED sensors",
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "design_date": "2026-09-06",
+      "correction_version": "v1-20260906-2c6bce708d14c832",
+      "origin_id": "P043",
+      "dest_id": "P066",
+      "hour": 14
+    }
+  },
+  "route_summary": {
+    "trips_with_cooler_route_pct": 36.74,
+    "trips_with_heat_exposure_pct": 70.06,
+    "exposed_trips_with_cooler_route_pct": 52.45,
+    "mean_heat_avoided_per_improved_trip": 4.003,
+    "mean_extra_distance_pct_per_improved_trip": 2.06,
+    "mean_sun_minutes_avoided_per_improved_trip": 0.63,
+    "trips_needing_unsafe_link_pct": 0.0,
+    "mode": "coolest",
+    "max_detour_pct": 25,
+    "evaluated_home_destination_pairs": 136,
+    "hour": "07:00-19:00 demand-weighted",
+    "data_label": "modelled; prices, trip rates and comfort limit are assumptions",
+    "heat_source": "corrected",
+    "sensor_source": "simulated",
+    "design_date": "2026-09-06",
+    "correction_version": "v1-20260906-2c6bce708d14c832"
+  },
+  "network": {
+    "link_count": 1491,
+    "place_count": 66,
+    "households": 855.0,
+    "graph_node_count": 1034,
+    "authoritative_place_nodes_checked": 66,
+    "unresolved_coordinate_nodes": []
+  },
+  "walking_demand": {
+    "flow_day_link_traversals": 26611.7,
+    "links_with_positive_flow": 271,
+    "baseline_population_exposure": 74670.84952777083,
+    "effective_population_exposure": 76573.962004125,
+    "description": "link traversals per day, not unique people or trips"
+  },
+  "planner": {
+    "budget_rm": 100000.0,
+    "selected_count": 6,
+    "spent_rm": 99818.0,
+    "remaining_rm": 182.0,
+    "area_before": 76573.962,
+    "area_after": 69489.491,
+    "exposure_saved": 7084.471000000005,
+    "metadata": {
+      "budget_rm": 100000.0,
+      "horizon_years": 10.0,
+      "spent_rm": 99818.0,
+      "upkeep_rm_per_year": 12614.4,
+      "cost_10y_rm": 225962.0,
+      "area_before": 76573.962,
+      "area_after": 69489.491,
+      "data_label": "modelled; prices, trip rates and comfort limit are assumptions",
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "design_date": "2026-09-06",
+      "correction_version": "v1-20260906-2c6bce708d14c832",
+      "heat_drop_hour": 13,
+      "heat_drop_units": "Celsius-labelled heat-index reduction",
+      "benefit_units": "person-degree-C-minutes above comfort threshold per day",
+      "shade_gain_rule": "proportional_remaining_sunlight"
+    },
+    "recommendations": [
+      {
+        "rank": 1,
+        "link_id": "L1073",
+        "fix": "shade_sail",
+        "cost_rm": 6510.0,
+        "upkeep_rm_per_year": 818.4,
+        "cost_10y_rm": 14694.0,
+        "heat_drop": 6.8145,
+        "person_min_saved_day": 503.81454,
+        "benefit_over_horizon": 501.87679,
+        "benefit_per_rm": 0.07709,
+        "weeks_to_effect": 4,
+        "quick_win": true
+      },
+      {
+        "rank": 2,
+        "link_id": "L1075",
+        "fix": "shade_sail",
+        "cost_rm": 14175.0,
+        "upkeep_rm_per_year": 1782.0,
+        "cost_10y_rm": 31995.0,
+        "heat_drop": 6.8145,
+        "person_min_saved_day": 1051.54286,
+        "benefit_over_horizon": 1047.49847,
+        "benefit_per_rm": 0.0739,
+        "weeks_to_effect": 4,
+        "quick_win": true
+      },
+      {
+        "rank": 3,
+        "link_id": "L0109",
+        "fix": "shade_sail",
+        "cost_rm": 51030.0,
+        "upkeep_rm_per_year": 6415.2,
+        "cost_10y_rm": 115182.0,
+        "heat_drop": 6.9407,
+        "person_min_saved_day": 3673.29002,
+        "benefit_over_horizon": 3659.16198,
+        "benefit_per_rm": 0.07171,
+        "weeks_to_effect": 4,
+        "quick_win": true
+      },
+      {
+        "rank": 4,
+        "link_id": "L0027",
+        "fix": "shade_sail",
+        "cost_rm": 10710.0,
+        "upkeep_rm_per_year": 1346.4,
+        "cost_10y_rm": 24174.0,
+        "heat_drop": 7.3193,
+        "person_min_saved_day": 767.05253,
+        "benefit_over_horizon": 764.10232,
+        "benefit_per_rm": 0.07134,
+        "weeks_to_effect": 4,
+        "quick_win": true
+      },
+      {
+        "rank": 5,
+        "link_id": "L0026",
+        "fix": "shade_sail",
+        "cost_rm": 15785.0,
+        "upkeep_rm_per_year": 1984.4,
+        "cost_10y_rm": 35629.0,
+        "heat_drop": 6.9407,
+        "person_min_saved_day": 1082.61329,
+        "benefit_over_horizon": 1078.44939,
+        "benefit_per_rm": 0.06832,
+        "weeks_to_effect": 4,
+        "quick_win": true
+      },
+      {
+        "rank": 6,
+        "link_id": "L0107",
+        "fix": "cool_paving",
+        "cost_rm": 1608.0,
+        "upkeep_rm_per_year": 268.0,
+        "cost_10y_rm": 4288.0,
+        "heat_drop": 0.8097,
+        "person_min_saved_day": 33.4459,
+        "benefit_over_horizon": 33.38159,
+        "benefit_per_rm": 0.02076,
+        "weeks_to_effect": 2,
+        "quick_win": true
+      }
+    ]
+  },
+  "preview": {
+    "link_id": "L1073",
+    "fix": "shade_sail",
+    "cost_rm": 6510.0,
+    "heat_drop": 6.8145,
+    "weeks_to_effect": 4,
+    "quick_win": true,
+    "maintenance_rm_per_year": 818.4,
+    "before": {
+      "albedo": 0.3,
+      "heat_by_hour": {
+        "h07": 27.06,
+        "h08": 27.58,
+        "h09": 32.52,
+        "h10": 37.02,
+        "h11": 40.35,
+        "h12": 42.3,
+        "h13": 42.7,
+        "h14": 42.83,
+        "h15": 41.97,
+        "h16": 39.49,
+        "h17": 37.65,
+        "h18": 34.23,
+        "h19": 30.76
+      },
+      "shade_by_hour": {
+        "h07": 1.0,
+        "h08": 1.0,
+        "h09": 0.0,
+        "h10": 0.0,
+        "h11": 0.0,
+        "h12": 0.0,
+        "h13": 0.0,
+        "h14": 0.0,
+        "h15": 0.0,
+        "h16": 0.0,
+        "h17": 0.0,
+        "h18": 0.0,
+        "h19": 1.0
+      }
+    },
+    "after": {
+      "albedo": 0.3,
+      "heat_by_hour": {
+        "h07": 27.06,
+        "h08": 27.58,
+        "h09": 30.2318,
+        "h10": 32.7367,
+        "h11": 34.4856,
+        "h12": 35.6426,
+        "h13": 35.8855,
+        "h14": 36.3014,
+        "h15": 35.7484,
+        "h16": 34.8495,
+        "h17": 34.1354,
+        "h18": 32.4715,
+        "h19": 30.76
+      },
+      "shade_by_hour": {
+        "h07": 1.0,
+        "h08": 1.0,
+        "h09": 0.75,
+        "h10": 0.75,
+        "h11": 0.75,
+        "h12": 0.75,
+        "h13": 0.75,
+        "h14": 0.75,
+        "h15": 0.75,
+        "h16": 0.75,
+        "h17": 0.75,
+        "h18": 0.75,
+        "h19": 1.0
+      }
+    },
+    "data_label": "modelled; prices, trip rates and comfort limit are assumptions",
+    "person_min_saved_day": 503.815,
+    "benefit_per_rm": 0.07739087,
+    "area_before": 76573.962,
+    "area_after": 76070.147,
+    "area_units": "person-degree-C-minutes above comfort threshold per day",
+    "heat_source": "corrected",
+    "sensor_source": "simulated",
+    "design_date": "2026-09-06",
+    "correction_version": "v1-20260906-2c6bce708d14c832",
+    "heat_drop_hour": 13,
+    "heat_drop_units": "Celsius-labelled heat-index reduction",
+    "benefit_units": "person-degree-C-minutes above comfort threshold per day",
+    "shade_gain_rule": "proportional_remaining_sunlight"
+  },
+  "correction": {
+    "available": true,
+    "bundle": "E:\\UTM Degree\\SAIA Sem 1\\Sime Darby Hackathon\\Prototype App\\coolcorridor\\data\\corrections\\v1-20260906-2c6bce708d14c832",
+    "correction_version": "v1-20260906-2c6bce708d14c832",
+    "manifest": {
+      "baseline_fallback_hours": [],
+      "design_date": "2026-09-06",
+      "generated_at_utc": "2026-10-21T14:03:55.483377+00:00",
+      "heat_units": "Celsius-labelled modelled heat index",
+      "hours": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "ignored_outside_design_window": 0,
+      "implementation": {
+        "effective.py": "b748dac30cee67e9bd7e8b22cc0e9367f29d76a9f9bec611dc1b93e4ddbcc581",
+        "heat.py": "a8bbd2e278386f25b45fbb313f090ae09251ddb3a3a2a8a2efafcac5d7e985bf",
+        "sensor_correction.py": "2bb40ff312daf5c9755fdf404052743ad5c3de9eda98ff880b9fa1b2841d17f6"
+      },
+      "inputs": {
+        "../config/sensor_simulation.json": {
+          "sha256": "71746dd16ef0a40033e56b85d290c777239a98faa6866dfe8f14b7c754d00a07"
+        },
+        "links.geojson": {
+          "sha256": "bcb966cd052830da611502fa481568ba549c1bd55e2942b09299edeee1d2c9ab"
+        },
+        "sensor_links.csv": {
+          "sha256": "27033510ad9f071f867d0c05b890e946ceb358194e134890857c976829b8b5a7"
+        },
+        "sensors_stream.csv": {
+          "sha256": "bdf932b11b4d93ba598a2853577a709e195f9e833f5f26cdbc7e8aa46cf83943"
+        },
+        "weather.csv": {
+          "design_rows_sha256": "937b831f87d089aa3dc1d23ab169e4dfc3941675d6fa54f1407aa47fce485314",
+          "sha256": "3e3bd02fc4de3382a188825ee3bbf4e8bda666bb277c8d3f3ecd6f20c9365fd4"
+        }
+      },
+      "link_count": 1491,
+      "output_version": "v1-20260906-2c6bce708d14c832",
+      "outputs": {
+        "corrected_heat.csv": "966fc035e799e5f1383ca73536dfb049430642527f65af067855c3ce72ef2242",
+        "rejected_samples.csv": "a00cc4b744ed13da3abb3d311bc531a122bc23c7bc6b446c7f8417c55e87d0dc",
+        "sensor_offsets.csv": "1d066f3273127629952a54a974d6b180d872047b83cd154b4d3591e3daa856fb",
+        "sensor_validation.csv": "cca210fcff6afbf3ab29b76947fe611bf580eeedfacd314c4323ce5a0f64b927"
+      },
+      "parameters": {
+        "aggregation": "median, minimum one accepted sample per sensor-hour",
+        "anomaly_baseline": "previous30min air-minus-interpolated-weather median, minimum3 readings",
+        "anomaly_threshold_c": 3.0,
+        "distance": "target link geometry to sensor link midpoint in local UTM",
+        "heat_rounding_decimals": 2,
+        "hour_window": "[hour-30min,hour+30min), Asia/Kuala_Lumpur",
+        "no_sensor_hour": "zero correction; explicitly labelled baseline fallback",
+        "outlier_policy": "existing dashboard causal residual departure detector",
+        "radius_m": 150,
+        "spatial_weight": "max(0,1-distance_m/150); nearest available sensor only",
+        "validation": "previous-hour correction against current-hour median air offset"
+      },
+      "reading_count_design_window": 1154,
+      "rejected_anomaly_samples": 1,
+      "row_count": 19383,
+      "schema_version": 1,
+      "sensor_count": 8,
+      "sensor_hours_per_hour": {
+        "10": 8,
+        "11": 8,
+        "12": 8,
+        "13": 8,
+        "14": 8,
+        "15": 8,
+        "16": 8,
+        "17": 8,
+        "18": 8,
+        "19": 8,
+        "7": 8,
+        "8": 8,
+        "9": 8
+      },
+      "sensor_source": "simulated",
+      "simulation_seed": 20260906,
+      "timezone": "Asia/Kuala_Lumpur",
+      "validation": {
+        "limitation": "Synthetic demonstration, not real-world accuracy; adjacent centred windows are disjoint",
+        "mean_absolute_error_after_c": 0.1626145833333308,
+        "mean_absolute_error_before_c": 1.061822916666667,
+        "method": "previous-hour calibration versus next-hour median simulated air offset",
+        "sensor_hours": 96
+      }
+    },
+    "validation": {
+      "limitation": "Synthetic demonstration, not real-world accuracy; adjacent centred windows are disjoint",
+      "mean_absolute_error_after_c": 0.1626145833333308,
+      "mean_absolute_error_before_c": 1.061822916666667,
+      "method": "previous-hour calibration versus next-hour median simulated air offset",
+      "sensor_hours": 96
+    },
+    "validation_description": "degrees C; held-out simulated air residual, not field heat-index accuracy"
+  },
+  "hottest_walked_links_at_13": [
+    {
+      "rank": 1,
+      "link_id": "L0027",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.78,
+      "heat": 44.39,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 30.6,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "asphalt",
+      "albedo": 0.1,
+      "name": "Jalan Putra Setia 6/1",
+      "minutes_above_comfort": 660,
+      "flow_day": 511.85,
+      "walking_load_m_day": 15662.61
+    },
+    {
+      "rank": 2,
+      "link_id": "L0026",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.28,
+      "heat": 43.73,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 45.1,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "grass",
+      "albedo": 0.25,
+      "name": "Jalan Putra Setia 6/1",
+      "minutes_above_comfort": 660,
+      "flow_day": 520.7,
+      "walking_load_m_day": 23483.570000000003
+    },
+    {
+      "rank": 3,
+      "link_id": "L0789",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.11,
+      "heat": 43.55,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 40.4,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "concrete",
+      "albedo": 0.3,
+      "name": null,
+      "minutes_above_comfort": 600,
+      "flow_day": 511.85,
+      "walking_load_m_day": 20678.74
+    },
+    {
+      "rank": 4,
+      "link_id": "L0777",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.28,
+      "heat": 43.34,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 138.4,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "paver",
+      "albedo": 0.25,
+      "name": "Persiaran Putra Indah",
+      "minutes_above_comfort": 600,
+      "flow_day": 511.85,
+      "walking_load_m_day": 70840.04000000001
+    },
+    {
+      "rank": 5,
+      "link_id": "L0020",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.28,
+      "heat": 43.28,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 166.3,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "paver",
+      "albedo": 0.25,
+      "name": "Persiaran Putra Indah",
+      "minutes_above_comfort": 600,
+      "flow_day": 85.55,
+      "walking_load_m_day": 14226.965
+    },
+    {
+      "rank": 6,
+      "link_id": "L1081",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.11,
+      "heat": 43.04,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 28.3,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "concrete",
+      "albedo": 0.3,
+      "name": null,
+      "minutes_above_comfort": 600,
+      "flow_day": 162.0,
+      "walking_load_m_day": 4584.6
+    },
+    {
+      "rank": 7,
+      "link_id": "L1078",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.11,
+      "heat": 42.83,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 17.7,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "concrete",
+      "albedo": 0.3,
+      "name": null,
+      "minutes_above_comfort": 600,
+      "flow_day": 162.0,
+      "walking_load_m_day": 2867.4
+    },
+    {
+      "rank": 8,
+      "link_id": "L0109",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.28,
+      "heat": 42.7,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 145.8,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "paver",
+      "albedo": 0.25,
+      "name": "Persiaran Putra Indah",
+      "minutes_above_comfort": 600,
+      "flow_day": 556.2,
+      "walking_load_m_day": 81093.96
+    },
+    {
+      "rank": 9,
+      "link_id": "L1073",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.11,
+      "heat": 42.7,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 18.6,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "concrete",
+      "albedo": 0.3,
+      "name": null,
+      "minutes_above_comfort": 600,
+      "flow_day": 607.5,
+      "walking_load_m_day": 11299.5
+    },
+    {
+      "rank": 10,
+      "link_id": "L0303",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.28,
+      "heat": 42.66,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 77.1,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "grass",
+      "albedo": 0.25,
+      "name": "Jalan Putra Mahkota 7/6C",
+      "minutes_above_comfort": 600,
+      "flow_day": 126.0,
+      "walking_load_m_day": 9714.599999999999
+    }
+  ],
+  "hottest_network_links_at_13": [
+    {
+      "rank": 1,
+      "link_id": "L0027",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.78,
+      "heat": 44.39,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 30.6,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "asphalt",
+      "albedo": 0.1,
+      "name": "Jalan Putra Setia 6/1",
+      "minutes_above_comfort": 660,
+      "flow_day": 511.85,
+      "walking_load_m_day": 15662.61
+    },
+    {
+      "rank": 2,
+      "link_id": "L1448",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.78,
+      "heat": 44.33,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 148.4,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "asphalt",
+      "albedo": 0.1,
+      "name": "Jalan Putra Indera 5",
+      "minutes_above_comfort": 660,
+      "flow_day": 0.0,
+      "walking_load_m_day": 0.0
+    },
+    {
+      "rank": 3,
+      "link_id": "L1350",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.78,
+      "heat": 44.21,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 160.8,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "asphalt",
+      "albedo": 0.1,
+      "name": "Jalan Putra Indera 5",
+      "minutes_above_comfort": 660,
+      "flow_day": 0.0,
+      "walking_load_m_day": 0.0
+    },
+    {
+      "rank": 4,
+      "link_id": "L1486",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.78,
+      "heat": 43.74,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 249.2,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "asphalt",
+      "albedo": 0.1,
+      "name": "Jalan Putra Indera 5",
+      "minutes_above_comfort": 600,
+      "flow_day": 0.0,
+      "walking_load_m_day": 0.0
+    },
+    {
+      "rank": 5,
+      "link_id": "L0026",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.28,
+      "heat": 43.73,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 45.1,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "grass",
+      "albedo": 0.25,
+      "name": "Jalan Putra Setia 6/1",
+      "minutes_above_comfort": 660,
+      "flow_day": 520.7,
+      "walking_load_m_day": 23483.570000000003
+    },
+    {
+      "rank": 6,
+      "link_id": "L1445",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.78,
+      "heat": 43.66,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 15.0,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "asphalt",
+      "albedo": 0.1,
+      "name": "Jalan Putra Indera 5",
+      "minutes_above_comfort": 600,
+      "flow_day": 0.0,
+      "walking_load_m_day": 0.0
+    },
+    {
+      "rank": 7,
+      "link_id": "L1446",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.78,
+      "heat": 43.59,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 33.2,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "asphalt",
+      "albedo": 0.1,
+      "name": "Jalan Putra Indera 5",
+      "minutes_above_comfort": 600,
+      "flow_day": 0.0,
+      "walking_load_m_day": 0.0
+    },
+    {
+      "rank": 8,
+      "link_id": "L1476",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.11,
+      "heat": 43.58,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 183.3,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "concrete",
+      "albedo": 0.3,
+      "name": null,
+      "minutes_above_comfort": 660,
+      "flow_day": 0.0,
+      "walking_load_m_day": 0.0
+    },
+    {
+      "rank": 9,
+      "link_id": "L0789",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.11,
+      "heat": 43.55,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 40.4,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "concrete",
+      "albedo": 0.3,
+      "name": null,
+      "minutes_above_comfort": 600,
+      "flow_day": 511.85,
+      "walking_load_m_day": 20678.74
+    },
+    {
+      "rank": 10,
+      "link_id": "L1482",
+      "hour": 13,
+      "design_date": "2026-09-06",
+      "heat_model": 42.11,
+      "heat": 43.46,
+      "heat_source": "corrected",
+      "sensor_source": "simulated",
+      "shade": 0.0,
+      "length_m": 160.0,
+      "covered": false,
+      "canopy": 0.0,
+      "surface": "concrete",
+      "albedo": 0.3,
+      "name": null,
+      "minutes_above_comfort": 600,
+      "flow_day": 0.0,
+      "walking_load_m_day": 0.0
+    }
+  ],
+  "output_version": "integration-7bc2cfed0119ae14be33",
+  "generated_at_utc": "2026-10-21T14:11:34.124382+00:00"
+}

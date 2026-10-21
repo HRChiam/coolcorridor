@@ -125,6 +125,9 @@ def render_cool_route() -> None:
         st.info("No route results are available. Try different places or check the local data files.")
         return
 
+    for mode, result in routes.items():
+        if result.get("uses_unsafe"):
+            st.warning(f"{ROUTE_LABELS[mode]}: {result.get('warning') or 'Uses an unsafe road because no safe connection exists'}")
     st.caption(heat_source_label(next(iter(routes.values()))))
 
     if len(routes) == 2:

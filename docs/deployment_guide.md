@@ -1,5 +1,7 @@
 # CoolCorridor deployment guide
 
+> Merge update: numerical results and packaging below describe the pre-merge release. See [merge resolution](merge_resolution.md) for the current `a64cdcf` integration, recalculated Planner and routing results, active correction bundle and deployment snapshot. Previous browser/cloud evidence does not verify this merged build.
+
 Prepared 21 October 2026. **Nothing has been published.** Commit, push, merge,
 account authorization, app creation and visibility changes require user approval.
 Use the accompanying [readiness evidence](deployment_readiness.md) and

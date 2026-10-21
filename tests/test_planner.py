@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 
@@ -59,11 +60,11 @@ def test_real_budget_outputs(budget, inputs):
     if budget == 0:
         assert table.empty and summary["benefit"] == 0
     elif budget == 100000:
-        assert len(table) == 15
-        assert summary["spent"] == 99920
-        assert summary["remaining"] == 80
-        assert summary["benefit"] == pytest.approx(5587.79224)
-        assert set(table.fix) == {"shade_trees"}
+        assert len(table) == 6
+        assert summary["spent"] == 99818
+        assert summary["remaining"] == 182
+        assert summary["benefit"] == pytest.approx(7084.47054)
+        assert set(table.fix) == {"shade_sail", "cool_paving"}
         assert table.attrs["heat_source"] == "corrected"
         assert table.attrs["sensor_source"] == "simulated"
 
@@ -75,7 +76,7 @@ def test_display_retains_ranks_units_and_selected_status(allocation):
     assert display["Cost (RM)"].tolist() == table.cost_rm.tolist()
     assert all(display.Selection == "Selected within budget (proposal)")
     assert "13:00 heat-index drop (°C)" in display
-    assert f"Saving ({planner.BENEFIT_UNIT})" in display
+    assert f"Full-effect saving ({planner.BENEFIT_UNIT})" in display
 
 
 @pytest.mark.parametrize("problem", ["missing", "overspend", "duplicate", "unknown_fix", "unknown_link", "nan", "rank", "attrs"])
@@ -145,7 +146,7 @@ def test_missing_preview_fields_and_results(monkeypatch, inputs):
 def test_real_map_geometries_serialization_and_colors(inputs, allocation):
     links, _ = inputs
     base, selected, skipped = planner.planning_paths(links, allocation[0])
-    assert not skipped and len(base) == 1491 and len(selected) == 15
+    assert not skipped and len(base) == 1491 and len(selected) == 6
     deck = json.loads(planner.build_planner_map(base, selected).to_json())
     assert deck["mapProvider"] == "carto" and deck["mapStyle"] == planner.pdk.map_styles.CARTO_LIGHT
     assert set(tuple(c) for c in planner.FIX_COLORS.values()).__len__() == 4
@@ -155,8 +156,10 @@ def test_real_map_geometries_serialization_and_colors(inputs, allocation):
         for item in layer["data"]:
             for lon, lat in item["path"]:
                 assert 101 < lon < 102 and 2 < lat < 4
+    selected_fixes = allocation[0].set_index("link_id").fix
     for row in selected:
-        assert row["color"] == planner.FIX_COLORS["shade_trees"]
+        link_id = re.search(r"L\d{4}", row["title"]).group()
+        assert row["color"] == planner.FIX_COLORS[selected_fixes[link_id]]
         assert "Selected within budget" in row["detail"] and planner.BENEFIT_UNIT in row["detail"]
     assert deck["layers"][0]["getWidth"] < deck["layers"][1]["getWidth"]
 
@@ -188,8 +191,10 @@ def test_app_budget_preview_and_previous_tabs():
     assert not at.exception
     assert [tab.label for tab in at.tabs] == ["Cool Route", "Heat Map", "Sensors", "Planner"]
     tab = at.tabs[3]
-    assert tab.metric[0].value == "RM 99,920.00"
-    assert tab.metric[1].value == "RM 80.00"
+    assert tab.metric[0].value == "RM 99,818.00"
+    assert tab.metric[1].value == "RM 182.00"
+    at.selectbox(key="planner_link").set_value("L0027")
+    at.selectbox(key="planner_fix").set_value("shade_trees")
     at.button(key="planner_preview_button").click().run()
     assert not at.exception
     assert at.tabs[3].metric[4].value == "RM 4,896.00"

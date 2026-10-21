@@ -2,6 +2,24 @@
 
 For Person 2 (routing and planner). This is everything from the heat model that `route()`, `priorities()` and `apply_fix()` need, and how to call it. Every snippet here has been run against the current data.
 
+> **Update, 20 Oct.** This guide was written before `engine.py` existed. Agreed since then:
+> - `engine.heat_at` and `heat_model.heat.heat_at` use the shared validated effective-heat reader. Correction columns come from the active immutable bundle, never unversioned columns embedded in the network. Routing and Planner consume the same heat. Network `unsafe` and `confidence` attributes pass through both interfaces.
+> - **Shade formula for fixes:** `s1 = s0 + (1 − s0) × shade_gain`, as in the `apply_fix` section below; it's now in `engine._calculate_fix`.
+> - **`unsafe` column is ready** (boolean, in `links.geojson` and so in `engine.heat_at`): 60 main-road links with no known footpath, with the reason in `unsafe_reason`. Every place can still reach the LRT without them, so your 10× fallback is a safety net rather than something today's data needs. `confidence` (high / medium / low) is there too.
+>
+> **Changes Person 1 made to your code on 20 Oct** (to finish the revised plan before the freeze; please review, all 12 tests pass):
+> - `route()` takes `mode="balanced"` (≤ 10% detour, from the same six λ searches as coolest).
+> - Unsafe links are skipped by every route, walking demand and `route_summary`; if that leaves no path, they cost 10× and the route has `uses_unsafe=True` plus a `warning`. All path-finding goes through `_safe_path`.
+> - `interventions.csv` has `weeks_to_effect`, `maintenance_rm_per_year` (RM per metre) and `quick_win`, with public cross-checks in `note`. Prices are unchanged.
+> - `priorities()` returns `weeks_to_effect` and `quick_win`, and takes `quick_wins_only=True`. `apply_fix()` also returns them, plus yearly upkeep.
+> - `route_summary()` takes `mode` and reports `trips_needing_unsafe_link_pct`.
+> - `person2_results.py` prints coolest and balanced routes, all-day and at 1pm, the best quick wins, and with `--comfort-test` the 30 / 32 / 34°C test. It was run with `--embed-flow`, so `flow_day` is in `links.geojson` and `priorities.csv` is current.
+> - Four new tests: balanced route, unsafe links skipped, the 10× fallback, and the exact budget search.
+> - **`priorities()` now finds the best mix exactly** (`_best_mix`: at most one fix per link, most person-minutes saved within the budget, RM 10 steps with costs rounded up). Picking fixes one by one by benefit per RM locked busy links into trees; the exact search picks sails there and saves 6.7% more at RM 100k, 39.6% more at RM 250k, in ≤ 0.11 s. RM 100k now buys 4 sails + 3 trees (−8.6% area-wide heat).
+> - **`priorities()` counts time to take effect and upkeep** over `horizon_years` (default 10; the app's toggle uses 1 and 10). Benefit = full daily benefit × `effect_share(w, H)` = 1 − w/(2H), or H/(2w) once the fix needs longer than the horizon (the 1 − w/(2H) formula alone goes negative for trees over 12 months). The budget covers building costs only; upkeep is shown alongside: new columns `upkeep_rm_per_year` and `cost_10y_rm` (build + 10 × upkeep), totals in `.attrs`, plus `benefit_over_horizon`; `benefit_per_rm` = benefit over the horizon per RM of build cost. With our assumed costs, RM 100k builds 5 sails + 1 cool paving in both views (−8.2% over 12 months, −8.5% over 10 years), plus RM 12,614 a year upkeep.
+> - `fix_options(horizon_years, upkeep_scale)` lists every candidate fix with its 10-year value (benefit ÷ 10-year total cost); `person2_results.py` uses it for the upkeep sensitivity check (×0.5, ×1, ×2). Sails beat trees on every link at all three levels; the best 10-year value is sails, except covered walkways at ×2.
+> - `route_summary()` also reports `trips_with_heat_exposure_pct` and `exposed_trips_with_cooler_route_pct` (the denominator is trips that can be improved), and takes `max_detour` for a sensitivity check. `person2_results.py` prints the 30% detour check and the planner at RM 50k / 100k / 250k with the extra heat removed per extra ringgit.
+
 ## The one import you need
 
 From the repo root (where `engine.py` lives):

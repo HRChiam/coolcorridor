@@ -1,5 +1,7 @@
 # Recomputed integration results
 
+> Merge update: numerical results and packaging below describe the pre-merge release. See [merge resolution](merge_resolution.md) for the current `a64cdcf` integration, recalculated Planner and routing results, active correction bundle and deployment snapshot. Previous browser/cloud evidence does not verify this merged build.
+
 Design day: **2026-09-06, Asia/Kuala_Lumpur**. Heat is a Celsius-labelled
 modelled index, not measured air temperature. Calibration uses **SIMULATED** data.
 

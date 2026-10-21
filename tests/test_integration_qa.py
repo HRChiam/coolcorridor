@@ -187,7 +187,8 @@ def test_heat_map_rejects_invalid_sensor_timestamps(bundle, problem):
 def test_planner_cache_invalidates_when_shared_input_changes(monkeypatch, bundle):
     monkeypatch.setattr(engine, "DATA_DIR", bundle)
     calls = []
-    def counted(budget):
+    def counted(budget, **kwargs):
+        assert kwargs == {"horizon_years": 10, "quick_wins_only": False}
         calls.append(budget)
         return pd.DataFrame({"call": [len(calls)]})
     monkeypatch.setattr(engine, "priorities", counted)

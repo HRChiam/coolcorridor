@@ -125,9 +125,9 @@ def test_cached_and_uncached_scalar_allocations_are_identical(repaired_network, 
 def test_budget_independent_candidates_are_reused_and_returned_copies(repaired_network, monkeypatch):
     original = engine._compute_planning_candidates
     calls = []
-    def counted(*, use_cache):
+    def counted(*, use_cache, **kwargs):
         calls.append(use_cache)
-        return original(use_cache=use_cache)
+        return original(use_cache=use_cache, **kwargs)
     monkeypatch.setattr(engine, "_compute_planning_candidates", counted)
     baseline = engine.priorities(100000)
     engine.priorities(0)
@@ -147,7 +147,7 @@ def test_cache_detects_same_size_content_change_with_restored_timestamp(repaired
     first = engine.priorities(100000)
     stat = path.stat()
     contents = path.read_bytes()
-    replacement = contents.replace(b"shade_trees,160,", b"shade_trees,180,")
+    replacement = contents.replace(b"shade_sail,350,", b"shade_sail,370,")
     assert len(replacement) == len(contents) and replacement != contents
     path.write_bytes(replacement)
     os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns))

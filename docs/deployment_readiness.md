@@ -1,5 +1,7 @@
 # Deployment readiness
 
+> Merge update: numerical results and packaging below describe the pre-merge release. See [merge resolution](merge_resolution.md) for the current `a64cdcf` integration, recalculated Planner and routing results, active correction bundle and deployment snapshot. Previous browser/cloud evidence does not verify this merged build.
+
 Prepared **21 October 2026**, Asia/Kuala_Lumpur. **PARTIAL for online deployment**:
 local packaging, clean installation and browser checks are available; actual
 Linux/cloud execution and repository-owner authorization remain unverified.

@@ -1,0 +1,7 @@
+rank,link_id,fix,cost_rm,upkeep_rm_per_year,cost_10y_rm,heat_drop,person_min_saved_day,benefit_over_horizon,benefit_per_rm,weeks_to_effect,quick_win
+1,L1073,shade_sail,6510.0,818.4,14694.0,6.8145,503.81454,501.87679,0.07709,4,True
+2,L1075,shade_sail,14175.0,1782.0,31995.0,6.8145,1051.54286,1047.49847,0.0739,4,True
+3,L0109,shade_sail,51030.0,6415.2,115182.0,6.9407,3673.29002,3659.16198,0.07171,4,True
+4,L0027,shade_sail,10710.0,1346.4,24174.0,7.3193,767.05253,764.10232,0.07134,4,True
+5,L0026,shade_sail,15785.0,1984.4,35629.0,6.9407,1082.61329,1078.44939,0.06832,4,True
+6,L0107,cool_paving,1608.0,268.0,4288.0,0.8097,33.4459,33.38159,0.02076,2,True

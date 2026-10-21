@@ -1,11 +1,11 @@
 {
-  "content_version": "7e60744e872603ce7e33c3fa7ad4148691a40f580b3f42d77e7e7984ebef9fd8",
-  "correction_version": "v1-20260906-2487cdd6cca7ef71",
+  "content_version": "f5d9e8d1e2f6a281ec6cf44d8aa13619feebdc68edc2b0042ecd6a7be58aa99d",
+  "correction_version": "v1-20260906-2c6bce708d14c832",
   "design_date": "2026-09-06",
   "files": {
     "app.py": {
-      "bytes": 10801,
-      "sha256": "eca636ccb87350b0ee5a6c623f72ee90ac11682c6b676fcf3f72315297656001"
+      "bytes": 11014,
+      "sha256": "2892a75912cde9bee9279042e99a17022ca9d766b7294fdf2894c813c72f7c85"
     },
     "app_data.py": {
       "bytes": 1972,
@@ -21,35 +21,35 @@
     },
     "data/corrections/current.json": {
       "bytes": 165,
-      "sha256": "46c78dc9529d127b5449d23684f42f49ebd2322a052f64b6591ce05e59b87a8f"
+      "sha256": "01e1e733b8f062a980c6f5632c5dd26c5c12bfa3545b6871bc498044d8c74228"
     },
-    "data/corrections/v1-20260906-2487cdd6cca7ef71/corrected_heat.csv": {
+    "data/corrections/v1-20260906-2c6bce708d14c832/corrected_heat.csv": {
       "bytes": 870446,
       "sha256": "966fc035e799e5f1383ca73536dfb049430642527f65af067855c3ce72ef2242"
     },
-    "data/corrections/v1-20260906-2487cdd6cca7ef71/manifest.json": {
+    "data/corrections/v1-20260906-2c6bce708d14c832/manifest.json": {
       "bytes": 3438,
-      "sha256": "5956f7aa222cb3701f6b6531701a8c892d1245a7ace1709ef57a0b2b8e079e36"
+      "sha256": "7e9a7ac8c51193d1ad561fb736a8221a8ffa34548402d606e259d66f5766002e"
     },
-    "data/corrections/v1-20260906-2487cdd6cca7ef71/rejected_samples.csv": {
+    "data/corrections/v1-20260906-2c6bce708d14c832/rejected_samples.csv": {
       "bytes": 222,
       "sha256": "a00cc4b744ed13da3abb3d311bc531a122bc23c7bc6b446c7f8417c55e87d0dc"
     },
-    "data/corrections/v1-20260906-2487cdd6cca7ef71/sensor_offsets.csv": {
+    "data/corrections/v1-20260906-2c6bce708d14c832/sensor_offsets.csv": {
       "bytes": 5489,
       "sha256": "1d066f3273127629952a54a974d6b180d872047b83cd154b4d3591e3daa856fb"
     },
-    "data/corrections/v1-20260906-2487cdd6cca7ef71/sensor_validation.csv": {
+    "data/corrections/v1-20260906-2c6bce708d14c832/sensor_validation.csv": {
       "bytes": 6703,
       "sha256": "cca210fcff6afbf3ab29b76947fe611bf580eeedfacd314c4323ce5a0f64b927"
     },
     "data/interventions.csv": {
-      "bytes": 474,
-      "sha256": "8eb4b7d1e6683cab565d3487f047b3003a536caef5fe572f37560b38f9b2f6af"
+      "bytes": 1293,
+      "sha256": "99996dd8ac905b3f0c52c3fd469d01f63c93fab8254703832dda1610d136ca16"
     },
     "data/links.geojson": {
-      "bytes": 1516313,
-      "sha256": "e4f3251ce02b4ff835815be9bd126e07bc868a30f0dcf465f8618556083e2d8f"
+      "bytes": 1964812,
+      "sha256": "bcb966cd052830da611502fa481568ba549c1bd55e2942b09299edeee1d2c9ab"
     },
     "data/places.geojson": {
       "bytes": 17686,
@@ -64,12 +64,12 @@
       "sha256": "bdf932b11b4d93ba598a2853577a709e195f9e833f5f26cdbc7e8aa46cf83943"
     },
     "data/weather.csv": {
-      "bytes": 1467,
-      "sha256": "4bcdf29d1b2df8ee0d5869251980b86c84bf5497953384a729e6f9d60533bd65"
+      "bytes": 1469,
+      "sha256": "3e3bd02fc4de3382a188825ee3bbf4e8bda666bb277c8d3f3ecd6f20c9365fd4"
     },
     "engine.py": {
-      "bytes": 40161,
-      "sha256": "cf10cc7897a685192cc3f46b3d50742fcdb99f34235e28001989897d7be34e60"
+      "bytes": 51870,
+      "sha256": "7895c81b400cd0762ffffc2643b6fc511d735491e3044884331588d204a5ac10"
     },
     "heat_map.py": {
       "bytes": 11889,
@@ -80,16 +80,16 @@
       "sha256": "b748dac30cee67e9bd7e8b22cc0e9367f29d76a9f9bec611dc1b93e4ddbcc581"
     },
     "heat_model/heat.py": {
-      "bytes": 4509,
-      "sha256": "c2063b4561ee1fde03730eab379c0a085df174746be6369bca05c8d45c13d078"
+      "bytes": 3620,
+      "sha256": "a8bbd2e278386f25b45fbb313f090ae09251ddb3a3a2a8a2efafcac5d7e985bf"
     },
     "heat_model/sensor_correction.py": {
       "bytes": 18141,
       "sha256": "2bb40ff312daf5c9755fdf404052743ad5c3de9eda98ff880b9fa1b2841d17f6"
     },
     "planner.py": {
-      "bytes": 17487,
-      "sha256": "7ee33586f2699b3b706d7fab735e4908791d84a964353d05bdf690aa1a7ab0fe"
+      "bytes": 19393,
+      "sha256": "2a9ccdcea1e08d2e63794d68d8f90740efb96a2758ad3d51358e60f5d1434ea1"
     },
     "sensors_dashboard.py": {
       "bytes": 20461,
@@ -117,10 +117,10 @@
     19
   ],
   "link_count": 1491,
-  "package": "coolcorridor-7e60744e872603ce7e33.zip",
-  "package_bytes": 265086,
-  "package_sha256": "e472cbce07c56c5a7217f15f220dc86cfc4ad752c12680a5fc20f5f597d091a0",
+  "package": "coolcorridor-f5d9e8d1e2f6a281ec6c.zip",
+  "package_bytes": 284074,
+  "package_sha256": "2b4dbebc5f4274d07f877461259698b5f613dad8916b2a40650655d6610fa0ab",
   "schema_version": 1,
   "sensor_source": "simulated",
-  "unpacked_bytes": 2664459
+  "unpacked_bytes": 3126718
 }

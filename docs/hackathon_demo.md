@@ -1,5 +1,7 @@
 # CoolCorridor: three-minute hackathon demo
 
+> Merge update: numerical results and packaging below describe the pre-merge release. See [merge resolution](merge_resolution.md) for the current `a64cdcf` integration, recalculated Planner and routing results, active correction bundle and deployment snapshot. Previous browser/cloud evidence does not verify this merged build.
+
 Use the packaged entrypoint from [deployment_guide.md](deployment_guide.md).
 The values below match the reviewed model and the new clean-environment checks.
 Full numerical evidence: [final_results.md](final_results.md) and

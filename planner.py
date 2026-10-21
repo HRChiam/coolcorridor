@@ -85,7 +85,7 @@ def validate_recommendations(result, budget, links, fixes):
         raise ValueError("Engine returned an unknown link or unsupported intervention")
     if table.link_id.duplicated().any():
         raise ValueError("Engine selected more than one intervention for a link")
-    for col in ("rank", "cost_rm", "heat_drop", "person_min_saved_day", "benefit_per_rm"):
+    for col in ("rank", "cost_rm", "heat_drop", "person_min_saved_day", "benefit_over_horizon", "benefit_per_rm", "upkeep_rm_per_year", "cost_10y_rm"):
         table[col] = pd.to_numeric(table[col], errors="raise")
         if not np.isfinite(table[col]).all() or (table[col] < 0).any():
             raise ValueError(f"Engine returned invalid {col}")
@@ -99,20 +99,26 @@ def validate_recommendations(result, budget, links, fixes):
     for attr, expected in (("budget_rm", budget), ("spent_rm", spent)):
         if attr in table.attrs and not math.isclose(float(table.attrs[attr]), expected, abs_tol=1e-7):
             raise ValueError(f"Engine {attr} disagrees with the checked allocation")
+    if (table.benefit_over_horizon > table.person_min_saved_day + 1e-5).any():
+        raise ValueError("Horizon benefit exceeds full-effect benefit")
+    if "area_before" in table.attrs and "area_after" in table.attrs:
+        expected = max(0.0, table.attrs["area_before"] - math.fsum(table.benefit_over_horizon))
+        if not math.isclose(table.attrs["area_after"], expected, abs_tol=.002):
+            raise ValueError("Area totals disagree with horizon-average benefit")
     summary = {"spent": spent, "remaining": max(0.0, budget - spent),
-               "benefit": math.fsum(table.person_min_saved_day), "count": len(table)}
+               "benefit": math.fsum(table.benefit_over_horizon), "full_benefit": math.fsum(table.person_min_saved_day), "count": len(table)}
     return table, summary
 
 
 @st.cache_data(show_spinner=False, max_entries=32)
-def _cached_priorities(budget, signature):
-    return engine.priorities(budget)
+def _cached_priorities(budget, signature, horizon_years=10, quick_wins_only=False):
+    return engine.priorities(budget, horizon_years=horizon_years, quick_wins_only=quick_wins_only)
 
 
-def fetch_recommendations(budget, links, fixes):
+def fetch_recommendations(budget, links, fixes, horizon_years=10, quick_wins_only=False):
     budget = validate_budget(budget)
     validate_heat_weather(links, design_day(Path(engine.DATA_DIR) / "weather.csv"), engine.HOURS)
-    return validate_recommendations(_cached_priorities(budget, input_signature()), budget, links, fixes)
+    return validate_recommendations(_cached_priorities(budget, input_signature(), horizon_years, quick_wins_only), budget, links, fixes)
 
 
 def preview_table(result):
@@ -181,7 +187,8 @@ def planning_paths(links, recommendations):
                 highlighted.append({**record, "color": FIX_COLORS.get(option["fix"], [20, 140, 155]),
                     "title": f"#{option['rank']:g} · {row.link_id} · {FIX_LABELS.get(option['fix'], option['fix'])}",
                     "detail": f"Selected within budget · RM {option['cost_rm']:,.2f}\n"
-                              f"Modelled saving: {option['person_min_saved_day']:,.3f} {BENEFIT_UNIT}\n"
+                              f"Horizon-average saving: {option['benefit_over_horizon']:,.3f} {BENEFIT_UNIT}\n"
+                              f"Full-effect saving: {option['person_min_saved_day']:,.3f} {BENEFIT_UNIT}\n"
                               f"13:00 heat-index drop: {option['heat_drop']:.4f} °C\n"
                               f"Benefit/RM: {option['benefit_per_rm']:.5f} {BENEFIT_UNIT}/RM"})
     if not base:
@@ -209,7 +216,7 @@ def recommendation_table(table):
     display["Selection"] = "Selected within budget (proposal)"
     return display.rename(columns={"rank": "Rank", "link_id": "Link", "fix": "Intervention",
         "cost_rm": "Cost (RM)", "heat_drop": "13:00 heat-index drop (°C)",
-        "person_min_saved_day": f"Saving ({BENEFIT_UNIT})", "benefit_per_rm": f"Benefit/RM ({BENEFIT_UNIT}/RM)"})
+        "person_min_saved_day": f"Full-effect saving ({BENEFIT_UNIT})", "benefit_over_horizon": f"Horizon-average saving ({BENEFIT_UNIT})", "benefit_per_rm": f"Benefit/RM ({BENEFIT_UNIT}/RM)"})
 
 
 @st.fragment
@@ -222,10 +229,14 @@ def render_planner():
             "or health outcomes. Costs and walking demand are assumptions.")
     budget = st.number_input("Investment budget (RM)", min_value=0.0, value=100000.0,
                              step=1000.0, format="%.2f", key="planner_budget")
+    horizon_years = st.radio("Benefit horizon (with our assumed costs)", [10, 1],
+                             format_func=lambda y: "10 years" if y == 10 else "Next 12 months",
+                             horizontal=True, key="planner_horizon")
+    quick_wins_only = st.checkbox("Quick wins only", key="planner_quick_wins")
     try:
         links, fixes = load_planning_data()
         with st.spinner("Ranking actual walking-link interventions…"):
-            table, summary = fetch_recommendations(budget, links, fixes)
+            table, summary = fetch_recommendations(budget, links, fixes, horizon_years, quick_wins_only)
         base, highlighted, skipped = planning_paths(links, table)
     except ERRORS as exc:
         st.error(f"Planner unavailable: {exc}")
@@ -235,7 +246,11 @@ def render_planner():
     spent.metric("Selected investment", f"RM {summary['spent']:,.2f}")
     remaining.metric("Remaining budget", f"RM {summary['remaining']:,.2f}")
     count.metric("Selected links", str(summary["count"]))
-    st.metric(f"Modelled daily exposure saving ({BENEFIT_UNIT})", f"{summary['benefit']:,.3f}")
+    st.metric(f"Horizon-average daily exposure saving ({BENEFIT_UNIT})", f"{summary['benefit']:,.3f}")
+    st.caption(f"Build budget only; plus RM {table.attrs['upkeep_rm_per_year']:,.2f} a year in assumed upkeep. "
+               f"10-year build plus upkeep: RM {table.attrs['cost_10y_rm']:,.2f}. "
+               f"Full-effect daily saving: {summary['full_benefit']:,.3f} {BENEFIT_UNIT}. "
+               "Effects grow linearly to the configured time to take effect; the selected horizon averages that ramp.")
     st.caption("Total selected costs were checked against the budget. These are proposed investments, "
                "not installed works. The engine returns only funded selections; it does not expose an unfunded shortlist.")
     if table.empty:
@@ -250,9 +265,10 @@ def render_planner():
     st.subheader("Budget-selected recommendations")
     st.dataframe(recommendation_table(table), hide_index=True, width="stretch")
     with st.expander("How ranking, benefits and costs work"):
-        st.write("Person 2's engine sorts link/fix candidates by daily exposure saving per RM, then benefit, "
-                 "cost and link ID. It greedily accepts positive-benefit candidates that fit the remaining budget, "
-                 "with at most one fix per link. This is not a guaranteed global optimum.")
+        st.write("The engine maximizes horizon-average benefit using multiple-choice knapsack over RM10 budget steps "
+                 "(coarser for very large budgets), with at most one intervention per link. Costs round up to steps, "
+                 "so it never overspends. This is exact for the rounded budget grid, not for continuous real costs. "
+                 "Candidates are content/version cached across budgets; horizon and upkeep also form cache keys.")
         st.write(f"Benefit sums assumed walkers × walking minutes × reduction in degrees above the "
                  f"{engine.COMFORT_C:g}°C comfort line across 07:00–19:00. Units are {BENEFIT_UNIT}, "
                  "not minutes or person-minutes. The engine's person_min_saved_day field uses this exposure unit. "

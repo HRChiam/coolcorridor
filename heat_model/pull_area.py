@@ -87,6 +87,12 @@ PLACE_TAGS = {
 SHOP_AMENITIES = {"restaurant", "cafe", "fast_food", "food_court", "marketplace", "bank", "pharmacy"}
 
 
+def configure_osmnx():
+    ox.settings.cache_folder = str(ROOT / "cache")
+    extra = ["surface", "covered", "sidewalk", "footway"]
+    ox.settings.useful_tags_way = list(dict.fromkeys(list(ox.settings.useful_tags_way) + extra))
+
+
 def with_retry(fn, *args, **kwargs):
     """The public Overpass server is often busy; back off and retry."""
     for attempt in range(6):
@@ -131,6 +137,7 @@ def pull_links():
             "name": edges.get("name", pd.Series(index=edges.index, dtype=object)).map(first),
             "highway": highway,
             "length_m": edges["length"].round(1),
+            "sidewalk": edges.get("sidewalk", pd.Series(index=edges.index, dtype=object)).map(first),
             "private": private,  # gated-community street; walkable for residents
             "covered": covered,
             "canopy": 0.0,
@@ -369,8 +376,7 @@ def main():
     if links_path.exists() and not args.force:
         sys.exit(f"{links_path} exists. Re-pulling renumbers link_ids and loses hand tags; use --force if you mean it.")
 
-    ox.settings.cache_folder = str(ROOT / "cache")
-    ox.settings.useful_tags_way = list(ox.settings.useful_tags_way) + ["surface", "covered", "sidewalk", "footway"]
+    configure_osmnx()
 
     print("Pulling walk network...")
     G, links = pull_links()

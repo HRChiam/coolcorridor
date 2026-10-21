@@ -1,5 +1,7 @@
 # Full integration repair
 
+> Merge update: numerical results and packaging below describe the pre-merge release. See [merge resolution](merge_resolution.md) for the current `a64cdcf` integration, recalculated Planner and routing results, active correction bundle and deployment snapshot. Previous browser/cloud evidence does not verify this merged build.
+
 This report supersedes the historical [Phase 7 audit](integration_qa.md).
 The repair started from clean commit `277ad82` on `person3-app-simulator` and
 works on the dedicated `integration-fixes-all-modules` branch. The user explicitly
