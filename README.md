@@ -1,5 +1,7 @@
 # COOLNEX
 
+**Live app: https://coolnex.streamlit.app/**
+
 > Official project brand: **COOLNEX**. See the [rebranding review](docs/rebranding.md) for the active deployment snapshot and intentional compatibility/historical exceptions.
 
 Current merge review: [resolved integration and updated results](docs/merge_resolution.md). Planner now uses safety-aware demand, horizon benefits and the budget optimizer from main. Historical numerical examples below are superseded by this report.
@@ -9,13 +11,17 @@ LRT. The repository contains the heat model (Person 1), routing and planner
 (Person 2), and the synthetic sensor generator and Streamlit + pydeck Cool Route,
 Heat Map, Sensors and Planner tabs (Person 3).
 
-## Deployment preparation — awaiting approval
+## Deployment
+
+The app is deployed on Streamlit Community Cloud at
+**https://coolnex.streamlit.app/**, from the `main` branch of `HRChiam/CoolNex`
+with Python 3.13.
 
 Use **`streamlit_app.py` as the cloud entrypoint**. It verifies and extracts the
 reviewed binary package, preserving the exact source/data bytes required by the
 correction manifest even after Linux Git checkout. It runs the same real app;
 no model or sensor regeneration occurs. `app.py` below remains the development
-entrypoint.
+entrypoint. To check the package locally before a redeploy:
 
 ```powershell
 .venv\Scripts\python.exe -B deployment_package.py
@@ -23,13 +29,12 @@ entrypoint.
 .venv\Scripts\python.exe -B -m streamlit run streamlit_app.py --server.address=127.0.0.1 --server.port=8501
 ```
 
-The ZIP is **265,086 bytes**, containing 24 runtime files and the active corrected
-bundle. Commit/push/deployment have **not** been authorized or performed. Start
-with [deployment readiness](docs/deployment_readiness.md), follow the
-[deployment guide](docs/deployment_guide.md) after approval, and rehearse the
-[three-minute demo](docs/hackathon_demo.md). Community Cloud requires the owner
-to authorize private-repository access and select Python 3.13. Linux wheel
-availability is checked; actual Linux/cloud execution remains a target-host test.
+The ZIP is **284,060 bytes**, containing 24 runtime files and the active corrected
+bundle. See [deployment readiness](docs/deployment_readiness.md) and the
+[deployment guide](docs/deployment_guide.md), and rehearse the
+[three-minute demo](docs/hackathon_demo.md). Redeploying needs the repository
+owner (private-repository access) and Python 3.13. Any change to the runtime
+needs a rebuilt package before it appears online.
 
 Do not run data-generation scripts to make startup work, upload ignored caches,
 or publish a different model silently. See `deployment/package_manifest.json`
@@ -81,8 +86,8 @@ configured fault annotations, provenance limitations and verification steps.
 
 The fourth tab, **Planner**, calls Person 2's actual `engine.priorities(budget_rm)`.
 Start at **RM100,000** to see actual selected interventions, remaining budget
-and modelled daily exposure savings. Change the budget to recalculate the greedy
-allocation; hover highlighted links for costs and benefits. Select a link and
+and modelled daily exposure savings. Change the budget to recalculate the best
+combination of fixes (an exact search, at most one fix per link); hover highlighted links for costs and benefits. Select a link and
 improvement, then press **Preview intervention** for real hourly before/after
 projections. Previews do not change data. Demand and candidate calculations are
 reused across budgets using content and correction-version keys.
@@ -132,7 +137,7 @@ reports access denied, run the command from the same Windows account that owns
 that folder. See [the Cool Route guide](docs/cool_route_app.md) for manual checks,
 metric definitions and current engine integration limits.
 
-## Person 3: sensor simulator
+## Sensor simulator
 
 Run these PowerShell commands from the repository root. You do not need to
 activate the environment when using its Python executable directly.
